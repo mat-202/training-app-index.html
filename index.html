@@ -136,9 +136,11 @@
             </select>
             
             <label for="operation-select">القسم:</label>
-            <select id="operation-select" disabled>
+            <select id="operation-select"> 
                 <option value="STATS" selected>الإحصاء (م.ح، منوال، مدى، وسيط)</option>
-                </select>
+                <option value="FRACTIONS">الكسور والنسب المئوية</option>
+                <option value="METRIC">التحويلات المترية (طول، سعة، كتلة)</option>
+            </select>
 
             <label for="time-limit-select">المدة الزمنية:</label>
             <select id="time-limit-select">
@@ -189,7 +191,6 @@
     let gameStarted = false; 
 
     let currentStudent = ""; 
-    // تم إلغاء الحاجة لـ currentOpponent
     
     // 🔥 تصفير النقاط التراكمية (لأننا لا نستطيع حفظها في iOS)
     let globalScores = {}; 
@@ -202,17 +203,17 @@
     const TRAINING_MASTER_THRESHOLD = 8; 
     const QUESTIONS_PER_LEVEL = 10; 
     
-    // الوحدات المترية (تم الإبقاء عليها في الدوال لكن لن تستخدم في الواجهة)
+    // الوحدات المترية 
     const METRIC_UNITS = {
         'LENGTH': { 'كم': 1000000, 'م': 1000, 'سم': 10, 'ملم': 1, 'كم_name': 'كيلومتر', 'م_name': 'متر', 'سم_name': 'سنتيمتر', 'ملم_name': 'ملليمتر' },
         'VOLUME': { 'كجم': 1000, 'جم': 1, 'ملجم': 0.001, 'كجم_name': 'كيلوجرام', 'جم_name': 'جرام', 'ملجم_name': 'ملليجرام' },
         'CAPACITY': { 'كل': 1000, 'لتر': 1, 'مل': 0.001, 'كل_name': 'كيلولتر', 'لتر_name': 'لتر', 'مل_name': 'ملليلتر' }
     };
     
-    // تم التركيز فقط على الإحصاء في القائمة المختصرة
+    // الأقسام المتاحة
     const SECTION_OPERATIONS = {
         'STATS': ['MEAN', 'MODE', 'RANGE', 'MEDIAN'],
-        'FRACTIONS': ['SIMPLIFY', 'DEC_TO_FRAC', 'FRAC_TO_DEC', 'DEC_TO_PER', 'PER_TO_DEC', 'MIXED_TO_IMPROP', 'IMPROP_TO_MIXED', 'MIXED_TO_PER', 'PER_TO_MIXED'],
+        'FRACTIONS': ['SIMPLIFY', 'DEC_TO_FRAC', 'FRAC_TO_DEC', 'DEC_TO_PER', 'PER_TO_DEC', 'MIXED_TO_IMPROP', 'IMPROP_TO_MIXED'], 
         'METRIC': ['LENGTH', 'VOLUME', 'CAPACITY']
     };
     
@@ -476,7 +477,7 @@
              } else {
                  let finalMsg = `🏆 تهانينا! أتقنت جميع مستويات هذا القسم!`;
                  document.getElementById('feedback').innerHTML = `<h1>${finalMsg}</h1>
-                                                                 <h2>يمكنك اختيار قسم جديد (إذا كانت الخيارات متاحة مستقبلاً) أو إعادة التدريب.</h2>`;
+                                                                 <h2>يمكنك اختيار قسم جديد أو إعادة التدريب.</h2>`;
                  resetGameDisplay();
                  document.getElementById('activate-training-btn').style.display = 'block';
                  return;
@@ -521,8 +522,7 @@
             return;
         }
         
-        // بما أن القسم ثابت، ننشئ قائمة الأسئلة الإحصائية للمستوى الحالي
-        generateQuestionQueue('STATS', currentLevel);
+        generateQuestionQueue(opType, currentLevel);
         document.getElementById('initial-level-select').value = currentLevel; 
         document.getElementById('level-navigation').style.display = 'none';
         
@@ -625,7 +625,7 @@
         updateTrainingProgressDisplay();
         saveAppState();
 
-        let startMessage = `✅ تم إعداد التدريب لـ **${currentStudent}**. ابدأ الآن!`;
+        let startMessage = `✅ تم إعداد التدريب لـ **${currentStudent}** في قسم **${document.querySelector(`#operation-select option[value="${opType}"]`).textContent}**. ابدأ الآن!`;
         
         document.getElementById('feedback').innerHTML = `<span class="correct">${startMessage}</span>`;
         
@@ -640,17 +640,14 @@
         currentQuestionQueue = [];
         const operations = SECTION_OPERATIONS[section];
         
-        // بما أن القسم ثابت على STATS
-        if (section === 'STATS') {
-            for (let i = 0; i < QUESTIONS_PER_LEVEL; i++) {
-                currentQuestionQueue.push({ op: getRandomElement(operations), level: level });
-            }
-        } else {
-             // هذه الأقسام لن تستخدم فعليًا بناءً على تعديل الواجهة
-             const unitType = getRandomElement(operations); 
-             for (let i = 0; i < QUESTIONS_PER_LEVEL; i++) {
-                 currentQuestionQueue.push({ op: unitType, level: level });
+        for (let i = 0; i < QUESTIONS_PER_LEVEL; i++) {
+             let op;
+             if (section === 'METRIC') {
+                  op = getRandomElement(operations); // اختيار فئة التحويل (طول، سعة، كتلة)
+             } else {
+                  op = getRandomElement(operations); // اختيار العملية الإحصائية/الكسرية
              }
+             currentQuestionQueue.push({ op: op, level: level });
         }
 
         // خلط الأسئلة
@@ -688,44 +685,54 @@
     function generateFractionChoices(correctAnswer, opType) {
         let choices = [];
         let correctAnswerString = correctAnswer.toString();
+        const correctNum = parseFloat(convertArabicToStandard(correctAnswerString));
 
-        if (opType.includes('DEC_TO_FRAC') || opType.includes('SIMPLIFY') || opType.includes('MIXED_TO_IMPROP') || opType.includes('IMPROP_TO_MIXED')) {
-             choices = generateGenericChoices(correctAnswerString);
-        } else {
-             // توليد كسور عادية أو نسب مئوية كخيار
-             let correctValue;
-             if (correctAnswerString.endsWith('%')) {
-                  correctValue = parseFloat(correctAnswerString.slice(0, -1)) / 100;
-             } else {
-                  correctValue = parseFloat(convertArabicToStandard(correctAnswerString));
-             }
+        choices.push(correctAnswerString);
 
-             choices.push(correctAnswerString);
-
-             while (choices.length < 4) {
-                 let distractorValue;
-                 if (opType.includes('DEC_TO_PER') || opType.includes('PER_TO_DEC')) {
-                      // توليد قيمة عشرية/مئوية قريبة
-                      let offset = getRandomInt(1, 10) * (getRandomElement([0.01, 0.05, 0.1])); 
-                      offset *= getRandomElement([1, -1]);
-                      distractorValue = correctValue + offset;
+        while (choices.length < 4) {
+             let distractor;
+             if (opType.includes('DEC_TO_FRAC') || opType.includes('SIMPLIFY') || opType.includes('MIXED_TO_IMPROP') || opType.includes('IMPROP_TO_MIXED')) {
+                  // توليد خيارات مضللة للكسور
+                  let n1, d1;
+                  do {
+                      ({ n: n1, d: d1 } = generateProperFraction(1));
+                      distractor = `${n1}/${d1}`;
+                  } while (choices.includes(distractor) || distractor === correctAnswerString);
+                  
+                  if (opType === 'MIXED_TO_IMPROP' || opType === 'IMPROP_TO_MIXED') {
+                      let wholePart = Math.floor(correctNum);
+                      let fracPart = correctNum - wholePart;
                       
-                      if (opType.includes('DEC_TO_PER')) {
-                          distractorValue = (distractorValue * 100).toFixed(1).replace(/\.?0+$/, '') + '%';
-                      } else {
-                          distractorValue = distractorValue.toFixed(2);
+                      if (opType === 'MIXED_TO_IMPROP') {
+                           // خيار قريب بخطأ في ضرب العدد الصحيح
+                           distractor = `${(wholePart + 1) * d1 + n1}/${d1}`;
+                           
+                      } else if (opType === 'IMPROP_TO_MIXED') {
+                           // خيار قريب بخطأ في الباقي
+                           if (Math.random() < 0.5) {
+                                distractor = `${wholePart} ${n1 + 1}/${d1}`;
+                           } else {
+                                distractor = `${wholePart - 1} ${n1}/${d1}`;
+                           }
                       }
-                 } else {
-                      // توليد قيمة عشرية/كسرية قريبة
-                      let offset = getRandomElement([0.1, 0.2, 0.5]) * getRandomElement([1, -1]);
-                      distractorValue = correctValue + offset;
-                      distractorValue = distractorValue.toFixed(2); 
-                 }
-                 
-                 distractorValue = distractorValue.toString().replace(/\s/g, ''); 
-                 if (!choices.includes(distractorValue) && !choices.includes(formatFractionForDisplay(distractorValue))) {
-                     choices.push(distractorValue);
-                 }
+                  }
+
+             } else {
+                  // توليد قيمة عشرية/مئوية قريبة
+                  let offset = getRandomInt(1, 10) * (getRandomElement([0.01, 0.05, 0.1])); 
+                  offset *= getRandomElement([1, -1]);
+                  distractor = correctNum + offset;
+                  
+                  if (opType.includes('DEC_TO_PER') || opType.includes('PER_TO_DEC')) {
+                      distractor = (distractor * 100).toFixed(1).replace(/\.?0+$/, '') + '%';
+                  } else {
+                      distractor = distractor.toFixed(2);
+                  }
+             }
+             
+             distractor = distractor.toString().replace(/\s/g, ''); 
+             if (!choices.includes(distractor) && !choices.includes(formatFractionForDisplay(distractor))) {
+                 choices.push(distractor);
              }
         }
         
@@ -824,6 +831,10 @@
             const dec = getRandomInt(10, 99) / 100;
             q = `حوّل العدد العشري: ${formatArabicNumerals(dec)} إلى نسبة مئوية.`;
             r = `${(dec * 100).toFixed(1).replace(/\.?0+$/, '')}%`;
+        } else if (opType === 'PER_TO_DEC') {
+            const per = getRandomInt(10, 99);
+            q = `حوّل النسبة المئوية: ${formatArabicNumerals(per)}% إلى عدد عشري.`;
+            r = (per / 100).toFixed(2);
         } else if (opType === 'MIXED_TO_IMPROP') {
             const whole = getRandomInt(1, 5);
             const n = getRandomInt(1, 5);
@@ -909,7 +920,7 @@
             let distractor = correctNum + offset;
             distractor = Math.round(distractor * 100) / 100; // لضمان رقمين عشريين
 
-            if (distractor <= 0 && correctNum > 0) continue; 
+            if (distractor <= 0 && correctNum > 0 && correctNum > 1) continue; 
             
             const distractorStr = formatResult(distractor).toString();
 
@@ -998,9 +1009,10 @@
     }
     
     function generateQuestion() {
+        const opType = document.getElementById('operation-select').value;
+        
         if (currentQuestionQueue.length === 0) {
-            // بما أن القسم ثابت، نستخدم 'STATS'
-            generateQuestionQueue('STATS', currentLevel);
+            generateQuestionQueue(opType, currentLevel);
             if (currentQuestionQueue.length === 0) {
                  document.getElementById('feedback').innerHTML = `<span class="wrong">❌ خطأ: لم يتم توليد أسئلة لهذا المستوى.</span>`;
                  return;
@@ -1010,20 +1022,23 @@
         clearTimer(); 
         
         const nextQuestion = currentQuestionQueue.shift();
-        const opType = nextQuestion.op;
+        const operation = nextQuestion.op;
         const level = nextQuestion.level;
         
         questionData = {};
 
-        // بما أن القسم ثابت على STATS
-        if (document.getElementById('operation-select').value === 'STATS') {
-             questionData = generateStatsQuestion(level, opType);
+        if (opType === 'STATS') {
+             questionData = generateStatsQuestion(level, operation);
+        } else if (opType === 'FRACTIONS') {
+             questionData = generateFractionQuestion(level, operation);
+        } else if (opType === 'METRIC') {
+             questionData = generateMetricConversion(operation, level);
         } else {
-             // هذه لن يتم تنفيذها فعليًا
-             questionData = generateStatsQuestion(level, opType);
+             document.getElementById('feedback').innerHTML = `<span class="wrong">❌ خطأ: القسم المحدد غير مدعوم.</span>`;
+             return;
         }
         
-        if (!questionData || !questionData.result) {
+        if (!questionData || questionData.result === undefined || questionData.result === null) {
             document.getElementById('feedback').innerHTML = `<span class="wrong">❌ خطأ في توليد السؤال.</span>`;
             return;
         }
@@ -1031,8 +1046,12 @@
         document.getElementById('expression-display').innerHTML = questionData.question;
         correctAnswer = questionData.result.toString(); 
 
-        // بما أن الإجابات إما أرقام أو 'لا يوجد' نستخدم generateGenericChoices
-        let choices = generateGenericChoices(correctAnswer);
+        let choices;
+        if (opType === 'FRACTIONS') {
+             choices = generateFractionChoices(correctAnswer, operation);
+        } else {
+             choices = generateGenericChoices(correctAnswer);
+        }
         
         renderChoices(choices);
         
