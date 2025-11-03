@@ -6,24 +6,20 @@
     <style>
         body { font-family: 'Arial', sans-serif; text-align: center; margin-top: 30px; background-color: #f4f4f9; }
         
-        /* 🌟 تم إلغاء نمط initiative-header */
-        
         .main-content { 
             display: flex; 
-            justify-content: center; /* توسيط بعد إزالة اللوحة الجانبية */
-            max-width: 1000px; /* تقليل الحد الأقصى للعرض لتبدو مركزة */
+            justify-content: center;
+            max-width: 1000px;
             margin: auto; 
         }
         .container { 
-            width: 100%; /* توسيع الحاوية لملء المساحة المتاحة */
+            width: 100%;
             padding: 20px; 
             border: 5px solid #007BFF;
             border-radius: 15px; 
             background-color: #fff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            /* تم إلغاء margin-left: 20px; */
         }
-        /* تم إلغاء نمط scores-panel */
         
         h1 { color: #007BFF; margin-bottom: 20px; }
         
@@ -132,7 +128,6 @@
         #start-btn { background-color: #28a745; }
         #next-round-btn { background-color: #007BFF; display: none; } 
 
-        /* تم إلغاء لوحة النتائج التراكمية */
         /* نمط للتغذية الراجعة */
         .correct { color: #28a745; font-weight: bold; }
         .wrong { color: #dc3545; font-weight: bold; }
@@ -213,9 +208,11 @@
             
             <label for="mode-select">اختر وضع المسابقة:</label>
             <select id="mode-select" onchange="toggleOpLevelControls()">
-                <option value="elimination1">خروج المغلوب 1 (قسم ومستوى ثابت)</option>
-                <option value="elimination2">خروج المغلوب 2 (قسم ثابت، مستوى تصاعدي)</option>
-                <option value="elimination3">خروج المغلوب 3 (قسم ومستوى تصاعدي)</option>
+                <option value="elimination4">مسابقة صف ثالث (تصاعدي شامل - حد أقصى 3)</option>
+                <option value="elimination5">مسابقة صف رابع (تصاعدي شامل - حد أقصى 4)</option>
+                <option value="elimination3">مسابقة صف خامس فأعلى (تصاعدي شامل - حد أقصى 5)</option>
+                <option value="elimination1">مسابقة عامة (قسم ومستوى ثابت)</option>
+                <option value="elimination2">مسابقة عامة (قسم ثابت ومستوى تصاعدي)</option>
             </select>
             
             <button id="start-btn" onclick="startGame()">بدء المسابقة</button> 
@@ -289,12 +286,12 @@
     let folderStudentsInPlay = []; 
     let isTieBreaker = false; 
     
-    // --- متغيرات التصاعد (Elimination 2 & 3) ---
-    let currentTournamentRound = 0; // مؤشر الجولة (يستخدم لـ E2 و E3)
-    let tournamentSchedule = []; // لـ E3 فقط
-    let fixedOperation = ''; // لـ E2 فقط
+    // --- متغيرات التصاعد (Elimination 2 & 3 & 4 & 5) ---
+    let currentTournamentRound = 0; 
+    let tournamentSchedule = []; 
+    let fixedOperation = ''; 
     const ALL_OPERATIONS = ['+', '-', '*', '/', 'R']; 
-    const MAX_LEVEL = 5; 
+    const MAX_LEVEL = 5; // الحد الأقصى العام للمستويات
     
     // ----------------------------------------------------------------
     // --- دوال التحكم في الواجهة ---
@@ -303,12 +300,12 @@
         const mode = document.getElementById('mode-select').value;
         const roundSetup = document.getElementById('round-setup');
         
-        // E1: ثابت / E2: ثابت
+        // E1 و E2: ثابت
         if (mode === 'elimination1' || mode === 'elimination2') {
             roundSetup.classList.remove('hide-op-level');
         } 
-        // E3: عشوائي/تصاعدي
-        else if (mode === 'elimination3') {
+        // E3, E4, E5: عشوائي/تصاعدي شامل (يخفي أدوات التحكم)
+        else if (mode === 'elimination3' || mode === 'elimination4' || mode === 'elimination5') {
             roundSetup.classList.add('hide-op-level');
         }
     }
@@ -334,7 +331,7 @@
         if (allowDecimals > 0) {
             const decimalPart = Math.random();
             number = number + decimalPart;
-            // 🌟 نحدد عدد كبير من المنازل لضمان الدقة في العمليات قبل التنسيق النهائي
+            // نحدد عدد كبير من المنازل لضمان الدقة في العمليات قبل التنسيق النهائي
             number = parseFloat(number.toFixed(Math.max(allowDecimals + 4, 10))); 
         }
         return number;
@@ -343,7 +340,7 @@
     function getNumberBounds(level, op) {
         level = parseInt(level);
         const d = (digits, decimals = 0) => ({ d: digits, dec: decimals });
-        const dec = level >= 5 ? 3 : 0; // 🌟 المستوى 5 للجمع/الطرح يستخدم 3 منازل عشرية الآن
+        const dec = level >= 5 ? 3 : 0; 
 
         if (op === '+' || op === '-') {
             if (level === 1) return { n1: d(1), n2: d(1) };
@@ -380,7 +377,6 @@
         let maxDecimals = 0;
 
         if (op === '+' || op === '-') {
-             // 🌟 تصحيح: استخدام عدد المنازل العشرية من bounds لضمان الدقة
              const dec1 = bounds.n1.dec;
              const dec2 = bounds.n2.dec;
              maxDecimals = Math.max(dec1, dec2);
@@ -395,7 +391,7 @@
                 result = n1 - n2;
              }
              
-             // 🌟 مهم: نستخدم toFixed هنا لضمان عدم وجود أخطاء في الفاصلة العائمة بعد العملية
+             // مهم: نستخدم toFixed هنا لضمان عدم وجود أخطاء في الفاصلة العائمة بعد العملية
              result = parseFloat(result.toFixed(maxDecimals)); 
              return { n1, n2, result, requiredDecimals: maxDecimals };
         }
@@ -456,7 +452,6 @@
             const powerOfTen = Math.pow(10, finalDecimalPlaces);
             correctAnswerValue = Math.round(numberToRound * powerOfTen) / powerOfTen;
         } else { // level 4 & 5
-             // 🌟 تم توحيد المستوى 4 و 5 على "جزء من ألف"
             roundingPlaceKey = 'جزء من ألف';
             finalDecimalPlaces = 3; 
             const decimalPlacesToGenerate = 5; 
@@ -466,7 +461,7 @@
             correctAnswerValue = Math.round(numberToRound * powerOfTen) / powerOfTen;
         }
         
-        // 🌟 التأكد من تنسيق الإجابة الصحيحة بشكل دقيق بعد التقريب
+        // التأكد من تنسيق الإجابة الصحيحة بشكل دقيق بعد التقريب
         correctAnswerValue = parseFloat(correctAnswerValue.toFixed(finalDecimalPlaces));
 
         return {
@@ -477,17 +472,16 @@
         };
     }
     
-    // 🌟 دالة مساعدة لتنسيق الأرقام المعروضة (حذف فاصلة الألوف)
+    // دالة مساعدة لتنسيق الأرقام المعروضة (حذف فاصلة الألوف)
     function formatNumberDisplay(value, maxDecimals = 0, isRounding = false) {
-        if (typeof value === 'string') return value; // إذا كان نص (مثل "أقرب عشرة")
+        if (typeof value === 'string') return value; 
         
         // إذا كان تقريب إلى عدد صحيح (level 1 & 2)
         if (isRounding && maxDecimals === 0) {
             return Math.round(value).toLocaleString(ARABIC_LOCALE, { useGrouping: false, maximumFractionDigits: 0 });
         }
         
-        // لجميع العمليات الأخرى (بما في ذلك التقريب العشري والجمع/الطرح/الضرب/القسمة)
-        // 🌟 نستخدم تنسيق عربي بدون فاصلة آلاف (useGrouping: false)
+        // نستخدم تنسيق عربي بدون فاصلة آلاف (useGrouping: false)
         return value.toLocaleString(ARABIC_LOCALE, {
              useGrouping: false,
              minimumFractionDigits: maxDecimals,
@@ -506,7 +500,7 @@
     
     function generateDistractors(correctAnswer, decimalPlaces) {
         let distractors = new Set();
-        // 🌟 نستخدم toFixed لضمان الدقة
+        // نستخدم toFixed لضمان الدقة
         let correct = parseFloat(correctAnswer.toFixed(decimalPlaces)); 
         let attempts = 0;
 
@@ -547,7 +541,7 @@
              addDistractor(farNumber);
         }
 
-        // 🌟 تنسيق الإجابات عند العرض (بما في ذلك التشتيت)
+        // تنسيق الإجابات عند العرض (بما في ذلك التشتيت)
         return Array.from(distractors).slice(0, 3).map(d => formatNumberDisplay(d, decimalPlaces));
     }
 
@@ -612,10 +606,10 @@
         const feedbackElement = document.getElementById('feedback');
         feedbackElement.innerHTML = `<span class="wrong">انتهى الوقت! (صفر فوز لـ ${currentPlayer === 1 ? playerName1 : playerName2}). الإجابة الصحيحة هي: ${correctAnswerDisplay}</span>`;
         
-        // في جميع أوضاع خروج المغلوب (1, 2, 3) نستخدم هذا المنطق
+        // في جميع أوضاع خروج المغلوب (1, 2, 3, 4, 5) نستخدم هذا المنطق
         eliminationQuestionsCount += 1; 
         
-        // نبدّل الدور بغض النظر عن النتيجة (حتى يستطيع المتسابق الثاني الإجابة)
+        // نبدّل الدور بغض النظر عن النتيجة 
         currentPlayer = (currentPlayer === 1) ? 2 : 1; 
         
         document.getElementById('score1-display').innerHTML = `${playerName1} (فوز): ${player1Wins.toLocaleString(ARABIC_LOCALE)}`;
@@ -690,14 +684,14 @@
         player1Wins = 0;
         player2Wins = 0;
         isTieBreaker = false;
-        fixedOperation = ''; // إعادة ضبط العملية الثابتة لـ E2
-        tournamentSchedule = []; // إعادة ضبط جدول E3
+        fixedOperation = ''; 
+        tournamentSchedule = []; 
         currentTournamentRound = 0;
         
         if (folderStudentsInPlay.length === 1) {
              const champion = folderStudentsInPlay[0];
              document.getElementById('feedback').innerHTML = `<h1>🏆 البطل هو: ${champion}! 🏆</h1>`;
-             globalScores[champion] = (globalScores[champion] || 0) + 1; // يمكن زيادة النقاط هنا أو إلغاؤها
+             globalScores[champion] = (globalScores[champion] || 0) + 1; 
              saveGlobalScores();
              document.getElementById('next-round-btn').textContent = 'بدء بطولة جديدة';
              document.getElementById('next-round-btn').style.display = 'block';
@@ -708,25 +702,38 @@
         }
     }
     
-    // لتهيئة وضع خروج المغلوب 3 (تصاعدي شامل)
+    // لتهيئة وضع خروج المغلوب 3, 4, 5 (تصاعدي شامل)
     function setupTournamentSchedule() {
         tournamentSchedule = [];
         let availableOps = shuffleArray([...ALL_OPERATIONS]);
 
-        for (let i = 1; i <= 4; i++) {
-            const op = availableOps.pop(); 
+        // 🌟 تحديد الحد الأقصى للمستوى بناءً على وضع المسابقة
+        let modeMaxLevel = MAX_LEVEL; 
+        const mode = document.getElementById('mode-select').value;
+        
+        if (mode === 'elimination4') { // مسابقة صف ثالث
+             modeMaxLevel = 3;
+        } else if (mode === 'elimination5') { // مسابقة صف رابع
+             modeMaxLevel = 4;
+        } // وإلا فإنه يستخدم MAX_LEVEL = 5 لـ elimination3 (صف خامس فأعلى)
+        
+        // الجزء الأول: تصاعد المستوى حتى الحد الأقصى modeMaxLevel
+        for (let i = 1; i <= modeMaxLevel; i++) {
+            const op = availableOps.pop() || shuffleArray([...ALL_OPERATIONS]).pop(); 
             tournamentSchedule.push({ level: i, operation: op });
         }
 
+        // الجزء الثاني: إذا كان هناك عمليات متبقية، نضعها على modeMaxLevel
         const remainingOps = availableOps; 
         remainingOps.forEach(op => {
-             tournamentSchedule.push({ level: MAX_LEVEL, operation: op });
+             tournamentSchedule.push({ level: modeMaxLevel, operation: op });
         });
         
+        // الجزء الثالث: التأكد من وجود جدول كافٍ (نكرر العمليات عند modeMaxLevel)
         let cycleOps = shuffleArray([...ALL_OPERATIONS]);
         while (tournamentSchedule.length < 10) { 
             const op = cycleOps.pop();
-            tournamentSchedule.push({ level: MAX_LEVEL, operation: op });
+            tournamentSchedule.push({ level: modeMaxLevel, operation: op });
             if (cycleOps.length === 0) {
                  cycleOps = shuffleArray([...ALL_OPERATIONS]); 
             }
@@ -739,18 +746,22 @@
         
         if (player1Wins === player2Wins) {
             
-            // 💡 منطق التصاعد بعد التعادل
-            if (currentMode === 'elimination2' || currentMode === 'elimination3') {
+            // منطق التصاعد بعد التعادل (لجميع أوضاع التصاعد)
+            if (currentMode === 'elimination2' || currentMode === 'elimination3' || currentMode === 'elimination4' || currentMode === 'elimination5') {
                  currentTournamentRound += 1;
-                 let newLevel = Math.min(currentTournamentRound + 1, MAX_LEVEL);
                  
-                 let statusMsg = `<span class="wrong">تعادل! ترقية المستوى إلى ${newLevel.toLocaleString(ARABIC_LOCALE)}</span>`;
-                 if (currentMode === 'elimination3') {
-                     // في E3، نحدد العملية الجديدة أيضاً
-                     const nextRound = tournamentSchedule[Math.min(currentTournamentRound, tournamentSchedule.length - 1)];
-                     const opName = nextRound.operation === 'R' ? 'تقريب' : nextRound.operation;
-                     statusMsg = `<span class="wrong">تعادل! ترقية إلى المستوى ${nextRound.level.toLocaleString(ARABIC_LOCALE)} والعملية: ${opName}</span>`;
+                 let newLevel, opName;
+                 
+                 if (currentMode === 'elimination2') {
+                     newLevel = Math.min(currentTournamentRound + 1, MAX_LEVEL);
+                     opName = fixedOperation === 'R' ? 'تقريب' : fixedOperation;
+                 } else { // E3, E4, E5
+                      const nextRound = tournamentSchedule[Math.min(currentTournamentRound, tournamentSchedule.length - 1)];
+                      newLevel = nextRound.level;
+                      opName = nextRound.operation === 'R' ? 'تقريب' : nextRound.operation;
                  }
+                 
+                 const statusMsg = `<span class="wrong">تعادل! ترقية إلى المستوى ${newLevel.toLocaleString(ARABIC_LOCALE)} والعملية: ${opName}</span>`;
                  document.getElementById('feedback').innerHTML = statusMsg;
             } else { // E1
                 document.getElementById('feedback').innerHTML = `<span class="wrong">تعادل! سؤال فاصل إضافي (لكل متسابق)...</span>`;
@@ -817,14 +828,16 @@
         isTieBreaker = false;
         currentTournamentRound = 0; // يبدأ دائماً من المستوى الأول
         
+        let modeDisplay = document.getElementById('mode-select').options[document.getElementById('mode-select').selectedIndex].text;
+        
         if (currentMode === 'elimination2') {
              fixedOperation = document.getElementById('operation-select').value;
-             document.getElementById('feedback').innerHTML = `الآن يتنافس: ${playerName1} vs ${playerName2} من ${selectedFolderName} (العملية الثابتة: ${fixedOperation === 'R' ? 'تقريب' : fixedOperation})`;
-        } else if (currentMode === 'elimination3') {
+             document.getElementById('feedback').innerHTML = `الآن يتنافس: ${playerName1} vs ${playerName2} من ${selectedFolderName} (${modeDisplay} - العملية الثابتة: ${fixedOperation === 'R' ? 'تقريب' : fixedOperation})`;
+        } else if (currentMode === 'elimination3' || currentMode === 'elimination4' || currentMode === 'elimination5') {
              setupTournamentSchedule(); 
-             document.getElementById('feedback').innerHTML = `الآن يتنافس: ${playerName1} vs ${playerName2} من ${selectedFolderName} (تصاعدي شامل)`;
+             document.getElementById('feedback').innerHTML = `الآن يتنافس: ${playerName1} vs ${playerName2} من ${selectedFolderName} (${modeDisplay})`;
         } else { // elimination1
-             document.getElementById('feedback').innerHTML = `الآن يتنافس: ${playerName1} vs ${playerName2} من ${selectedFolderName} (قسم ومستوى ثابت)`;
+             document.getElementById('feedback').innerHTML = `الآن يتنافس: ${playerName1} vs ${playerName2} من ${selectedFolderName} (${modeDisplay})`;
         }
 
 
@@ -898,10 +911,17 @@
         // تحديد العملية والمستوى بناءً على وضع المسابقة الحالي
         let op, level;
         
-        if (currentMode === 'elimination3') {
+        // المنطق المحدث ليشمل E3, E4, E5
+        if (currentMode === 'elimination3' || currentMode === 'elimination4' || currentMode === 'elimination5') {
              const roundInfo = tournamentSchedule[Math.min(currentTournamentRound, tournamentSchedule.length - 1)];
              op = roundInfo.operation;
              level = roundInfo.level;
+             
+             // إضافة رسالة توضيحية للمستوى الحالي في أوضاع التصاعد الشامل
+             const opName = op === 'R' ? 'تقريب' : op;
+             const currentPlayerName = currentPlayer === 1 ? playerName1 : playerName2;
+             document.getElementById('feedback').innerHTML = `الدور لـ **${currentPlayerName}** - 🎯 الهدف: المستوى ${level.toLocaleString(ARABIC_LOCALE)} (${opName})`;
+             
         } else if (currentMode === 'elimination2') {
              op = fixedOperation;
              level = Math.min(currentTournamentRound + 1, MAX_LEVEL); // مستوى تصاعدي يبدأ من 1
@@ -916,11 +936,11 @@
         if (op === 'R') {
              questionData = generateRoundingQuestion(level);
              decimalsToDisplay = questionData.roundingDisplayDecimals;
-             currentRoundingDecimals = decimalsToDisplay; // لتوليد المشتتات
+             currentRoundingDecimals = decimalsToDisplay; 
         } else {
              questionData = generateOperationQuestion(level, op);
-             decimalsToDisplay = questionData.requiredDecimals; // لاستخدامها في عرض السؤال والإجابة
-             currentRoundingDecimals = decimalsToDisplay; // لتوليد المشتتات
+             decimalsToDisplay = questionData.requiredDecimals; 
+             currentRoundingDecimals = decimalsToDisplay; 
         }
         
         num1 = questionData.n1;
@@ -934,7 +954,7 @@
 
         if (op === 'R') {
             operatorDisplay = 'قرب إلى:';
-            formattedNum2 = num2; // num2 هو نص "أقرب عشرة" أو "جزء من مئة"
+            formattedNum2 = num2; 
         } else {
             formattedNum2 = formatNumberDisplay(num2, (op === '+' || op === '-') ? decimalsToDisplay : 0, false);
             operatorDisplay = op === '*' ? '×' : op === '/' ? '÷' : op;
@@ -947,7 +967,7 @@
 
         // توليد وتنسيق الإجابة الصحيحة وخيارات التشتيت
         correctAnswerDisplay = formatNumberDisplay(correctAnswerValue, decimalsToDisplay, op === 'R' && (decimalsToDisplay === 0));
-        const distractors = generateDistractors(correctAnswerValue, decimalsToDisplay); // 🌟 استخدام المنازل العشرية المطلوبة للدقة
+        const distractors = generateDistractors(correctAnswerValue, decimalsToDisplay); 
         
         let options = shuffleArray([...distractors, correctAnswerDisplay]);
 
@@ -966,7 +986,7 @@
         const currentName = currentPlayer === 1 ? playerName1 : playerName2;
         document.getElementById('current-player').textContent = currentName;
         
-        let time = TIME_LIMIT; // 🌟 تم توحيد الوقت لـ 30 ثانية لجميع الجولات
+        let time = TIME_LIMIT; 
 
         document.getElementById('timer-display').style.color = '#333';
         startTimer(time);
@@ -977,7 +997,7 @@
         isProcessing = true;
         clearTimer(); 
         
-        // 🌟 التأكد من مقارنة الأرقام كنصوص منسقة (بدون فاصلة ألوف)
+        // التأكد من مقارنة الأرقام كنصوص منسقة 
         const isCorrect = selectedAnswer === correctAnswerDisplay;
         const feedbackElement = document.getElementById('feedback');
         
