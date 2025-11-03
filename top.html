@@ -334,7 +334,8 @@
         if (allowDecimals > 0) {
             const decimalPart = Math.random();
             number = number + decimalPart;
-            number = parseFloat(number.toFixed(allowDecimals + 2)); 
+            // 🌟 نحدد عدد كبير من المنازل لضمان الدقة في العمليات قبل التنسيق النهائي
+            number = parseFloat(number.toFixed(Math.max(allowDecimals + 4, 10))); 
         }
         return number;
     }
@@ -342,7 +343,7 @@
     function getNumberBounds(level, op) {
         level = parseInt(level);
         const d = (digits, decimals = 0) => ({ d: digits, dec: decimals });
-        const dec = level >= 5 ? 4 : 0; 
+        const dec = level >= 5 ? 3 : 0; // 🌟 المستوى 5 للجمع/الطرح يستخدم 3 منازل عشرية الآن
 
         if (op === '+' || op === '-') {
             if (level === 1) return { n1: d(1), n2: d(1) };
@@ -376,10 +377,16 @@
         const bounds = getNumberBounds(level, op);
         let n1, n2, result;
         level = parseInt(level);
+        let maxDecimals = 0;
 
         if (op === '+' || op === '-') {
-             n1 = generateNumberWithDigits(bounds.n1.d, bounds.n1.dec);
-             n2 = generateNumberWithDigits(bounds.n2.d, bounds.n2.dec);
+             // 🌟 تصحيح: استخدام عدد المنازل العشرية من bounds لضمان الدقة
+             const dec1 = bounds.n1.dec;
+             const dec2 = bounds.n2.dec;
+             maxDecimals = Math.max(dec1, dec2);
+             
+             n1 = generateNumberWithDigits(bounds.n1.d, dec1);
+             n2 = generateNumberWithDigits(bounds.n2.d, dec2);
 
              if (op === '+') {
                 result = n1 + n2;
@@ -387,8 +394,10 @@
                 if (n1 < n2) [n1, n2] = [n2, n1];
                 result = n1 - n2;
              }
-             if (level === 5) result = parseFloat(result.toFixed(4));
-             return { n1, n2, result };
+             
+             // 🌟 مهم: نستخدم toFixed هنا لضمان عدم وجود أخطاء في الفاصلة العائمة بعد العملية
+             result = parseFloat(result.toFixed(maxDecimals)); 
+             return { n1, n2, result, requiredDecimals: maxDecimals };
         }
         
         if (op === '*' || op === '/') {
@@ -412,10 +421,10 @@
                  result = factor1; 
              }
              
-             return { n1, n2, result };
+             return { n1, n2, result, requiredDecimals: 0 };
         }
         
-        return { n1: 1, n2: 1, result: 2 };
+        return { n1: 1, n2: 1, result: 2, requiredDecimals: 0 };
     }
 
     function generateRoundingQuestion(level) {
@@ -446,24 +455,18 @@
             
             const powerOfTen = Math.pow(10, finalDecimalPlaces);
             correctAnswerValue = Math.round(numberToRound * powerOfTen) / powerOfTen;
-        } else if (level === 4) {
+        } else { // level 4 & 5
+             // 🌟 تم توحيد المستوى 4 و 5 على "جزء من ألف"
             roundingPlaceKey = 'جزء من ألف';
             finalDecimalPlaces = 3; 
             const decimalPlacesToGenerate = 5; 
-            numberToRound = generateNumberWithDigits(3, decimalPlacesToGenerate); 
-            
-            const powerOfTen = Math.pow(10, finalDecimalPlaces);
-            correctAnswerValue = Math.round(numberToRound * powerOfTen) / powerOfTen;
-        } else { // level 5
-            roundingPlaceKey = 'جزء من عشرة آلاف';
-            finalDecimalPlaces = 4; 
-            const decimalPlacesToGenerate = 6; 
             numberToRound = generateNumberWithDigits(4, decimalPlacesToGenerate); 
             
             const powerOfTen = Math.pow(10, finalDecimalPlaces);
             correctAnswerValue = Math.round(numberToRound * powerOfTen) / powerOfTen;
         }
         
+        // 🌟 التأكد من تنسيق الإجابة الصحيحة بشكل دقيق بعد التقريب
         correctAnswerValue = parseFloat(correctAnswerValue.toFixed(finalDecimalPlaces));
 
         return {
@@ -474,17 +477,24 @@
         };
     }
     
-    function formatAnswer(value, decimalPlaces) {
-        if (decimalPlaces === 0) {
-            return Math.round(value).toLocaleString(ARABIC_LOCALE);
-        } else {
-            return value.toLocaleString(ARABIC_LOCALE, {
-                 minimumFractionDigits: decimalPlaces,
-                 maximumFractionDigits: decimalPlaces,
-                 useGrouping: false
-            });
+    // 🌟 دالة مساعدة لتنسيق الأرقام المعروضة (حذف فاصلة الألوف)
+    function formatNumberDisplay(value, maxDecimals = 0, isRounding = false) {
+        if (typeof value === 'string') return value; // إذا كان نص (مثل "أقرب عشرة")
+        
+        // إذا كان تقريب إلى عدد صحيح (level 1 & 2)
+        if (isRounding && maxDecimals === 0) {
+            return Math.round(value).toLocaleString(ARABIC_LOCALE, { useGrouping: false, maximumFractionDigits: 0 });
         }
+        
+        // لجميع العمليات الأخرى (بما في ذلك التقريب العشري والجمع/الطرح/الضرب/القسمة)
+        // 🌟 نستخدم تنسيق عربي بدون فاصلة آلاف (useGrouping: false)
+        return value.toLocaleString(ARABIC_LOCALE, {
+             useGrouping: false,
+             minimumFractionDigits: maxDecimals,
+             maximumFractionDigits: maxDecimals 
+        });
     }
+
     
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
@@ -496,12 +506,14 @@
     
     function generateDistractors(correctAnswer, decimalPlaces) {
         let distractors = new Set();
-        let correct = parseFloat(correctAnswer.toFixed(decimalPlaces));
+        // 🌟 نستخدم toFixed لضمان الدقة
+        let correct = parseFloat(correctAnswer.toFixed(decimalPlaces)); 
         let attempts = 0;
 
         const addDistractor = (val) => {
             val = parseFloat(val.toFixed(decimalPlaces));
-            if (Math.abs(val - correct) > 0.0001 && distractors.size < 3) {
+            // التحقق من أن الفرق أكبر من قيمة صغيرة لتجنب أخطاء الفاصلة العائمة
+            if (Math.abs(val - correct) > Math.pow(10, -(decimalPlaces + 1)) && distractors.size < 3) {
                 distractors.add(val);
                 return true;
             }
@@ -510,9 +522,11 @@
 
         let smallOffset = decimalPlaces === 0 ? 1 : Math.pow(10, -decimalPlaces);
         
+        // التشتيت بمقدار بسيط (أعلى وأدنى رقم صحيح/عشري)
         if (addDistractor(correct + smallOffset)) {}
         if (addDistractor(correct - smallOffset)) {}
         
+        // توليد تشتيت عشوائي
         while (distractors.size < 3 && attempts < 20) {
             let deviation = Math.random() * (Math.max(correct / 10, 10)) + smallOffset; 
             let sign = Math.random() < 0.5 ? 1 : -1;
@@ -527,12 +541,14 @@
             attempts++;
         }
         
+        // ملء الفراغ بأرقام بعيدة إن لم يتم التوليد بالكامل
         while (distractors.size < 3) {
              let farNumber = generateNumberWithDigits(5, decimalPlaces);
              addDistractor(farNumber);
         }
 
-        return Array.from(distractors).slice(0, 3).map(d => formatAnswer(d, decimalPlaces));
+        // 🌟 تنسيق الإجابات عند العرض (بما في ذلك التشتيت)
+        return Array.from(distractors).slice(0, 3).map(d => formatNumberDisplay(d, decimalPlaces));
     }
 
 
@@ -895,21 +911,24 @@
         }
 
         let questionData;
+        let decimalsToDisplay = 0; 
         
         if (op === 'R') {
              questionData = generateRoundingQuestion(level);
-             currentRoundingDecimals = questionData.roundingDisplayDecimals;
+             decimalsToDisplay = questionData.roundingDisplayDecimals;
+             currentRoundingDecimals = decimalsToDisplay; // لتوليد المشتتات
         } else {
              questionData = generateOperationQuestion(level, op);
-             currentRoundingDecimals = 0; // لعمليات الجمع والطرح والضرب والقسمة (بشكل عام)
+             decimalsToDisplay = questionData.requiredDecimals; // لاستخدامها في عرض السؤال والإجابة
+             currentRoundingDecimals = decimalsToDisplay; // لتوليد المشتتات
         }
         
         num1 = questionData.n1;
         num2 = questionData.n2;
         correctAnswerValue = questionData.result;
         
-        // تنسيق الأرقام المعروضة
-        const formattedNum1 = num1.toLocaleString(ARABIC_LOCALE, { useGrouping: false, maximumFractionDigits: 4 });
+        // تنسيق الأرقام المعروضة (بدون فاصلة آلاف)
+        const formattedNum1 = formatNumberDisplay(num1, (op === '+' || op === '-') ? decimalsToDisplay : 0, op === 'R');
         let formattedNum2 = '';
         let operatorDisplay = op;
 
@@ -917,7 +936,7 @@
             operatorDisplay = 'قرب إلى:';
             formattedNum2 = num2; // num2 هو نص "أقرب عشرة" أو "جزء من مئة"
         } else {
-            formattedNum2 = num2.toLocaleString(ARABIC_LOCALE, { useGrouping: false, maximumFractionDigits: 4 });
+            formattedNum2 = formatNumberDisplay(num2, (op === '+' || op === '-') ? decimalsToDisplay : 0, false);
             operatorDisplay = op === '*' ? '×' : op === '/' ? '÷' : op;
         }
 
@@ -927,8 +946,8 @@
         document.getElementById('q-num2').textContent = formattedNum2;
 
         // توليد وتنسيق الإجابة الصحيحة وخيارات التشتيت
-        correctAnswerDisplay = formatAnswer(correctAnswerValue, currentRoundingDecimals);
-        const distractors = generateDistractors(correctAnswerValue, currentRoundingDecimals);
+        correctAnswerDisplay = formatNumberDisplay(correctAnswerValue, decimalsToDisplay, op === 'R' && (decimalsToDisplay === 0));
+        const distractors = generateDistractors(correctAnswerValue, decimalsToDisplay); // 🌟 استخدام المنازل العشرية المطلوبة للدقة
         
         let options = shuffleArray([...distractors, correctAnswerDisplay]);
 
@@ -958,6 +977,7 @@
         isProcessing = true;
         clearTimer(); 
         
+        // 🌟 التأكد من مقارنة الأرقام كنصوص منسقة (بدون فاصلة ألوف)
         const isCorrect = selectedAnswer === correctAnswerDisplay;
         const feedbackElement = document.getElementById('feedback');
         
