@@ -140,6 +140,7 @@
                 <option value="STATS" selected>الإحصاء (م.ح، منوال، مدى، وسيط)</option>
                 <option value="FRACTIONS">الكسور والنسب المئوية</option>
                 <option value="METRIC">التحويلات المترية (طول، سعة، كتلة)</option>
+                <option value="MEASUREMENT">القياس (زوايا، مساحات، حجوم)</option>
             </select>
 
             <label for="time-limit-select">المدة الزمنية:</label>
@@ -189,6 +190,8 @@
     let correctAnswer = null; 
     let isProcessingClick = false; 
     let gameStarted = false; 
+    // استخدام قيمة تقريبية لـ Pi (3.14) للمسائل التي تتطلبها
+    const PI = 3.14159265359; 
 
     let currentStudent = ""; 
     
@@ -214,7 +217,12 @@
     const SECTION_OPERATIONS = {
         'STATS': ['MEAN', 'MODE', 'RANGE', 'MEDIAN'],
         'FRACTIONS': ['SIMPLIFY', 'DEC_TO_FRAC', 'FRAC_TO_DEC', 'DEC_TO_PER', 'PER_TO_DEC', 'MIXED_TO_IMPROP', 'IMPROP_TO_MIXED'], 
-        'METRIC': ['LENGTH', 'VOLUME', 'CAPACITY']
+        'METRIC': ['LENGTH', 'VOLUME', 'CAPACITY'],
+        'MEASUREMENT': { 
+            '1': ['TRIANGLE_ANGLE_SUM', 'SUPPLEMENTARY_ANGLE', 'COMPLEMENTARY_ANGLE', 'VERTICAL_ANGLE'], 
+            '2': ['AREA_CIRCLE', 'AREA_TRIANGLE', 'AREA_SQUARE', 'AREA_RECTANGLE', 'AREA_TRAPEZOID'],
+            '3': ['VOLUME_CUBE', 'VOLUME_SPHERE', 'VOLUME_CUBOID', 'VOLUME_CYLINDER', 'VOLUME_CONE', 'VOLUME_PYRAMID']
+        }
     };
     
     let currentLevel = 1; 
@@ -273,6 +281,10 @@
     
     function formatResult(res) {
          if (typeof res === 'number') {
+            // تقريب النتائج العشرية لـ MEASUREMENT إلى منزلة عشرية واحدة
+            if (document.getElementById('operation-select').value === 'MEASUREMENT' && res % 1 !== 0) {
+                 return formatArabicNumerals(parseFloat(res.toFixed(1)));
+            }
             if (res === Math.floor(res)) {
                  return formatArabicNumerals(res);
             }
@@ -638,14 +650,22 @@
     
     function generateQuestionQueue(section, level) {
         currentQuestionQueue = [];
-        const operations = SECTION_OPERATIONS[section];
+        let operations;
         
+        if (section === 'MEASUREMENT') {
+            operations = SECTION_OPERATIONS[section][level.toString()];
+        } else {
+            operations = SECTION_OPERATIONS[section];
+        }
+
         for (let i = 0; i < QUESTIONS_PER_LEVEL; i++) {
              let op;
-             if (section === 'METRIC') {
-                  op = getRandomElement(operations); // اختيار فئة التحويل (طول، سعة، كتلة)
+             if (section === 'MEASUREMENT') {
+                  op = getRandomElement(operations);
+             } else if (section === 'METRIC') {
+                  op = getRandomElement(operations); 
              } else {
-                  op = getRandomElement(operations); // اختيار العملية الإحصائية/الكسرية
+                  op = getRandomElement(operations); 
              }
              currentQuestionQueue.push({ op: op, level: level });
         }
@@ -903,6 +923,112 @@
         };
     }
     
+    function generateMeasurementQuestion(level, opType) {
+        let q = '', r = null;
+
+        // --- المستوى 1: قياس الزوايا ---
+        if (level === 1) {
+            if (opType === 'TRIANGLE_ANGLE_SUM') {
+                const angle1 = getRandomInt(20, 100);
+                const angle2 = getRandomInt(20, 180 - angle1 - 10);
+                r = 180 - angle1 - angle2;
+                q = `مثلث قياس زاويتين فيه هما: **${formatArabicNumerals(angle1)}°** و **${formatArabicNumerals(angle2)}°**. أوجد قياس الزاوية الثالثة.`;
+            } else if (opType === 'SUPPLEMENTARY_ANGLE') {
+                const angle = getRandomInt(30, 150);
+                r = 180 - angle;
+                q = `زاوية على خط مستقيم قياس إحداها هو **${formatArabicNumerals(angle)}°**. ما هو قياس الزاوية المكملة لها؟`;
+            } else if (opType === 'COMPLEMENTARY_ANGLE') {
+                const angle = getRandomInt(10, 80);
+                r = 90 - angle;
+                q = `ما هو قياس الزاوية المتممة للزاوية التي قياسها **${formatArabicNumerals(angle)}°**؟`;
+            } else if (opType === 'VERTICAL_ANGLE') {
+                const knownAngle = getRandomInt(30, 150);
+                const type = getRandomElement(['KNOWN', 'ADJACENT']);
+                
+                if (type === 'KNOWN') {
+                    r = knownAngle;
+                    q = `إذا تقاطع مستقيمان، وكان قياس إحدى الزوايا المتكونة هو **${formatArabicNumerals(knownAngle)}°**. ما قياس الزاوية المتقابلة بالرأس معها؟`;
+                } else {
+                    r = 180 - knownAngle;
+                    q = `مستقيمان متقاطعان: إذا كان قياس الزاوية الحادة المتكونة هو **${formatArabicNumerals(knownAngle)}°**. ما قياس الزاوية المجاورة لها على الخط المستقيم؟`;
+                }
+            }
+            r = Math.round(r * 1) / 1; // Round to integer
+            q += ' (بالدرجات)';
+
+        } 
+        // --- المستوى 2: قياس المساحات ---
+        else if (level === 2) {
+            if (opType === 'AREA_CIRCLE') {
+                const radius = getRandomInt(2, 10);
+                r = PI * radius * radius;
+                q = `دائرة نصف قطرها **${formatArabicNumerals(radius)}**. أوجد مساحتها. (استخدم ${formatArabicNumerals(3.14)} لـ $\\pi$)`;
+            } else if (opType === 'AREA_TRIANGLE') {
+                const base = getRandomInt(5, 20);
+                const height = getRandomInt(3, 15);
+                r = 0.5 * base * height;
+                q = `مثلث قاعدته **${formatArabicNumerals(base)}** وارتفاعه **${formatArabicNumerals(height)}**. أوجد مساحته.`;
+            } else if (opType === 'AREA_SQUARE') {
+                const side = getRandomInt(4, 15);
+                r = side * side;
+                q = `مربع طول ضلعه **${formatArabicNumerals(side)}**. أوجد مساحته.`;
+            } else if (opType === 'AREA_RECTANGLE') {
+                const length = getRandomInt(6, 25);
+                const width = getRandomInt(3, length - 1);
+                r = length * width;
+                q = `مستطيل طوله **${formatArabicNumerals(length)}** وعرضه **${formatArabicNumerals(width)}**. أوجد مساحته.`;
+            } else if (opType === 'AREA_TRAPEZOID') {
+                const base1 = getRandomInt(5, 15);
+                const base2 = getRandomInt(5, 15, [base1]);
+                const height = getRandomInt(3, 10);
+                r = 0.5 * (base1 + base2) * height;
+                q = `شبه منحرف طول قاعدتيه **${formatArabicNumerals(base1)}** و **${formatArabicNumerals(base2)}**، وارتفاعه **${formatArabicNumerals(height)}**. أوجد مساحته.`;
+            }
+            r = Math.round(r * 10) / 10; // Round to 1 decimal place
+            q += ' (بوحدة مربعة)';
+        } 
+        // --- المستوى 3: قياس الحجوم ---
+        else if (level === 3) {
+            if (opType === 'VOLUME_CUBE') {
+                const side = getRandomInt(3, 10);
+                r = side * side * side;
+                q = `مكعب طول ضلعه **${formatArabicNumerals(side)}**. أوجد حجمه.`;
+            } else if (opType === 'VOLUME_SPHERE') {
+                const radius = getRandomInt(2, 6);
+                r = (4 / 3) * PI * radius * radius * radius;
+                q = `كرة نصف قطرها **${formatArabicNumerals(radius)}**. أوجد حجمها. (استخدم ${formatArabicNumerals(3.14)} لـ $\\pi$)`;
+            } else if (opType === 'VOLUME_CUBOID') {
+                const length = getRandomInt(5, 12);
+                const width = getRandomInt(3, 10);
+                const height = getRandomInt(2, 8);
+                r = length * width * height;
+                q = `متوازي مستطيلات أبعاده: طول **${formatArabicNumerals(length)}**، عرض **${formatArabicNumerals(width)}**، ارتفاع **${formatArabicNumerals(height)}**. أوجد حجمه.`;
+            } else if (opType === 'VOLUME_CYLINDER') {
+                const radius = getRandomInt(2, 5);
+                const height = getRandomInt(5, 10);
+                r = PI * radius * radius * height;
+                q = `أسطوانة نصف قطر قاعدتها **${formatArabicNumerals(radius)}** وارتفاعها **${formatArabicNumerals(height)}**. أوجد حجمها. (استخدم ${formatArabicNumerals(3.14)} لـ $\\pi$)`;
+            } else if (opType === 'VOLUME_CONE') {
+                const radius = getRandomInt(2, 5);
+                const height = getRandomInt(5, 10);
+                r = (1 / 3) * PI * radius * radius * height;
+                q = `مخروط نصف قطر قاعدته **${formatArabicNumerals(radius)}** وارتفاعه **${formatArabicNumerals(height)}**. أوجد حجمه. (استخدم ${formatArabicNumerals(3.14)} لـ $\\pi$)`;
+            } else if (opType === 'VOLUME_PYRAMID') {
+                // قاعدة مربعة أو مستطيلة مساحتها جاهزة
+                const baseLength = getRandomInt(4, 10);
+                const baseWidth = getRandomInt(4, 10);
+                const baseArea = baseLength * baseWidth; 
+                const height = getRandomInt(5, 15);
+                r = (1 / 3) * baseArea * height;
+                q = `هرم مساحة قاعدته **${formatArabicNumerals(baseArea)}** وارتفاعه **${formatArabicNumerals(height)}**. أوجد حجمه.`;
+            }
+            r = Math.round(r * 10) / 10; // Round to 1 decimal place
+            q += ' (بوحدة مكعبة)';
+        }
+
+        return { question: q, result: r };
+    }
+    
     function generateGenericChoices(correctAnswer) {
         let choices = [correctAnswer.toString()];
         const correctNum = parseFloat(convertArabicToStandard(correctAnswer.toString()));
@@ -918,7 +1044,13 @@
             }
             
             let distractor = correctNum + offset;
-            distractor = Math.round(distractor * 100) / 100; // لضمان رقمين عشريين
+            
+            // للحفاظ على نفس التقريب للمسائل العشرية
+            if (document.getElementById('operation-select').value === 'MEASUREMENT' && distractor % 1 !== 0) {
+                 distractor = Math.round(distractor * 10) / 10;
+            } else {
+                 distractor = Math.round(distractor * 100) / 100; 
+            }
 
             if (distractor <= 0 && correctNum > 0 && correctNum > 1) continue; 
             
@@ -980,7 +1112,13 @@
             // محاولة مقارنة عددية للنقاط العائمة والكسور
             const numSelected = parseFloat(selectedStandard);
             const numCorrect = parseFloat(correctStandard);
-            if (!isNaN(numSelected) && !isNaN(numCorrect) && Math.abs(numSelected - numCorrect) < 0.001) {
+            
+            // مقارنة مع هامش خطأ بسيط (0.05) للمسائل العشرية لضمان دقة التقريب 
+            if (document.getElementById('operation-select').value === 'MEASUREMENT') {
+                if (!isNaN(numSelected) && !isNaN(numCorrect) && Math.abs(numSelected - numCorrect) < 0.1) {
+                    isCorrect = true;
+                }
+            } else if (!isNaN(numSelected) && !isNaN(numCorrect) && Math.abs(numSelected - numCorrect) < 0.001) {
                 isCorrect = true;
             }
         }
@@ -995,10 +1133,13 @@
             
             // إظهار الإجابة الصحيحة على الزر الصحيح
             document.querySelectorAll('.choice-btn').forEach(btn => {
-                if (btn.innerHTML === formattedCorrect) {
+                // إيجاد الإجابة الصحيحة في الخيارات
+                const btnStandard = convertArabicToStandard(btn.textContent.replace(/<[^>]*>?/gm, ''));
+                if (Math.abs(parseFloat(btnStandard) - parseFloat(correctStandard)) < 0.1 || btnStandard.toLowerCase() === correctStandard.toLowerCase()) {
                     btn.style.backgroundColor = '#fff3cd'; 
                     btn.style.border = '3px solid #FFC107'; 
-                    btn.innerHTML = `✅ ${formattedCorrect}`;
+                    // إعادة تنسيق النص الصحيح من المتغير correctAnswer لتجنب مشاكل HTML
+                    btn.innerHTML = `✅ ${formatFractionForDisplay(correctAnswer)}`;
                 }
             });
 
@@ -1033,6 +1174,8 @@
              questionData = generateFractionQuestion(level, operation);
         } else if (opType === 'METRIC') {
              questionData = generateMetricConversion(operation, level);
+        } else if (opType === 'MEASUREMENT') {
+             questionData = generateMeasurementQuestion(level, operation);
         } else {
              document.getElementById('feedback').innerHTML = `<span class="wrong">❌ خطأ: القسم المحدد غير مدعوم.</span>`;
              return;
