@@ -1154,31 +1154,76 @@
     // 💥 الدالة المعدلة لضمان توليد 4 خيارات مختلفة دائمًا
     // ----------------------------------------------------
     function generateChoices(correctAnswer) {
+        const opType = document.getElementById('operation-select').value;
         const choices = [correctAnswer];
         let attempts = 0;
         const maxAttempts = 100;
 
-        // الهدف: 4 خيارات (الصحيحة + 3 خاطئة)
+        // **✅ 1. منطق خاص لأسئلة التقريب لزيادة الصعوبة**
+        if (opType === 'R') {
+            const correctStr = correctAnswer.toString();
+            let roundValue = 1; 
+            
+            // محاولة استنتاج القيمة التي تم التقريب إليها (لأعداد الصحيحة)
+            if (Number.isInteger(correctAnswer) && correctAnswer !== 0) {
+                 const zeros = correctStr.match(/0+$/) ? correctStr.match(/0+$/)[0].length : 0;
+                 roundValue = Math.pow(10, zeros > 0 ? zeros : 1); // نضمن 10 على الأقل
+            // محاولة استنتاج القيمة التي تم التقريب إليها (للأعداد العشرية)
+            } else if (!Number.isInteger(correctAnswer)) {
+                 const decimals = correctStr.split('.')[1] ? correctStr.split('.')[1].length : 0;
+                 roundValue = Math.pow(10, -decimals); 
+            }
+
+            // توليد الإجابات الخاطئة القريبة جداً (القيم الدائرية المجاورة والخطأ البسيط)
+            const nearFakes = [
+                correctAnswer + roundValue,             // القيمة المُقربة التالية (مثلاً 22000)
+                correctAnswer - roundValue,             // القيمة المُقربة السابقة (مثلاً 20000)
+                correctAnswer + roundValue * 0.1,       // خطأ صغير في التقريب (مثلاً 21100)
+                correctAnswer - roundValue * 0.1,       // خطأ صغير في التقريب (مثلاً 20900)
+                correctAnswer + roundValue * 0.5,       // خطأ منتصف الطريق (مثلاً 21500)
+            ].filter(c => c !== correctAnswer);
+
+            // إضافة 3 خيارات خاطئة من القائمة المخصصة
+            while (choices.length < 4 && nearFakes.length > 0) {
+                // اختيار عشوائي من الخيارات القريبة لضمان التنوع
+                const randomIndex = Math.floor(Math.random() * nearFakes.length);
+                const fake = nearFakes.splice(randomIndex, 1)[0]; 
+                
+                if (fake !== correctAnswer && !choices.some(c => parseFloat(c.toFixed(4)) === parseFloat(fake.toFixed(4)))) {
+                    choices.push(parseFloat(fake.toFixed(4)));
+                }
+            }
+        }
+
+        // **✅ 2. منطق عام للعمليات الحسابية (وزيادة التركيز على الأخطاء القريبة)**
         while (choices.length < 4 && attempts < maxAttempts) {
             let fakeAnswer;
             
-            // محاولة إنشاء إجابة قريبة من الصحيحة لـ 40 محاولة
-            if (attempts < 40 && correctAnswer !== 0) {
-                // توليد إزاحة صغيرة (10% - 20%)
-                const percentage = getRandomElement([-0.2, -0.1, 0.1, 0.2]);
-                let offset = correctAnswer * percentage;
-
-                // إذا كانت الإجابة الصحيحة عدد صحيح كبير، محاولة خطأ في منزلة
-                if (Number.isInteger(correctAnswer) && Math.abs(correctAnswer) >= 10 && attempts % 2 === 0) {
-                    const powerOfTen = Math.pow(10, getRandomInt(0, correctAnswer.toString().length - 2));
-                    offset = getRandomElement([-1, 1]) * powerOfTen;
-                }
+            // توليد خطأ شائع/قريب (خطأ في منزلة معينة)
+            if (attempts < 60 && correctAnswer !== 0) { 
+                let offset;
                 
+                if (Number.isInteger(correctAnswer) && Math.abs(correctAnswer) >= 10) {
+                    // توليد خطأ في منزلة محددة (آحاد، عشرات، مئات، إلخ)
+                    const correctLength = correctAnswer.toString().replace('-', '').length;
+                    const minPower = (correctLength > 1) ? 0 : 0;
+                    const maxPower = Math.min(correctLength - 1, 3); // حتى منزلة الآلاف كحد أقصى للخطأ الشائع
+                    
+                    // اختيار القوة التي سيتم الخطأ فيها (10^0، 10^1، 10^2، إلخ)
+                    const power = Math.pow(10, getRandomInt(minPower, maxPower));
+                    
+                    // الإزاحة هي مضاعف للقوة
+                    offset = getRandomElement([-1, 1]) * power * getRandomElement([1, 2, 5]); 
+                    
+                    // إذا كان الناتج صغيراً، نستخدم إزاحة صغيرة (1-5)
+                } else { 
+                     offset = getRandomElement([-1, -2, 1, 2, -5, 5]); 
+                }
+
                 fakeAnswer = parseFloat((correctAnswer + offset).toFixed(4));
             
-            // توليد رقم عشوائي أبعد
+            // توليد خطأ عشوائي أبعد إذا فشل التوليد القريب
             } else {
-                // نطاق عشوائي كبير لضمان رقم مختلف
                 const range = Math.max(15, Math.abs(correctAnswer) * 0.75);
                 const randomOffset = getRandomInt(-range, range);
                 fakeAnswer = correctAnswer + randomOffset;
@@ -1187,25 +1232,14 @@
             // التقريب والتأكد من التساوي في نوع العدد
             fakeAnswer = parseFloat(fakeAnswer.toFixed(4));
             
-            // إذا كانت الإجابة الصحيحة عدد صحيح، يتم تقريب الإجابة الخاطئة أيضاً لتكون عدد صحيح
-            if (Number.isInteger(correctAnswer) || (document.getElementById('operation-select').value === '+' || document.getElementById('operation-select').value === '-')) {
+            if (Number.isInteger(correctAnswer) || (opType === '+' || opType === '-')) {
                  fakeAnswer = Math.round(fakeAnswer);
             } 
             
-            // يجب أن يكون الخيار الخاطئ مختلفاً عن الصحيح وعن باقي الخيارات الخاطئة
             if (fakeAnswer !== correctAnswer && !choices.some(c => parseFloat(c.toFixed(4)) === parseFloat(fakeAnswer.toFixed(4)))) {
                 choices.push(fakeAnswer);
             }
             attempts++;
-        }
-
-        // إذا فشل التوليد العشوائي (نادرًا)، سنضمن 4 خيارات بالقوة
-        while (choices.length < 4) {
-             let forcedFake = correctAnswer + (choices.length % 2 === 0 ? 1 : -1) * 10 * choices.length;
-             forcedFake = Math.round(forcedFake);
-             if (!choices.includes(forcedFake)) {
-                 choices.push(forcedFake);
-             }
         }
         
         // خلط الخيارات
