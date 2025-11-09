@@ -169,7 +169,7 @@
             font-weight: 900;
             color: #333;
             font-size: 70px; 
-            direction: ltr; /* للحفاظ على شكل الرقم كأرقام عربية (لاتينية) */
+            /* لا حاجة لـ direction: ltr هنا لأننا سنستخدم الأرقام العربية مباشرةً */
             margin: 0;
         }
         
@@ -380,6 +380,14 @@
         // ********** نهاية قوائم البيانات **********
 
         // **********************************************
+        // ********** 2. دالة تحويل الأرقام إلى عربية **********
+        // **********************************************
+        function convertToArabicNumbers(num) {
+            const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            return String(num).split('').map(digit => arabicNumbers[digit]).join('');
+        }
+
+        // **********************************************
         // ********** 3. متغيرات وعناصر التحكم **********
         // **********************************************
 
@@ -434,13 +442,13 @@
             }
             
             const itemNumber = currentItemIndex + 1;
+            const arabicItemNumber = convertToArabicNumbers(itemNumber); // تحويل الرقم إلى عربي
             const itemContent = itemsArray[currentItemIndex];
             
-            // التعديل الجديد: الترتيب هو (الكلمة الرقم) بدون فاصل
-            // الكلمة أولاً (على اليمين في RTL) ثم الرقم
+            // التعديل الجديد: الترتيب هو (الكلمة الرقم) باللغة العربية
             currentItemElement.innerHTML = `
                 <span class="item-content">${itemContent}</span>
-                <span class="item-number">${itemNumber}</span>
+                <span class="item-number">${arabicItemNumber}</span>
             `;
             
             startTimerBar(intervalDuration / 1000);
