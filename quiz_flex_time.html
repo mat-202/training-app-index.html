@@ -918,25 +918,26 @@
                     const shaddah_3 = SHADDAH_PREFIXES[2] + char + 'ِّ';
 
 
+
 // أل الشمسية/القمرية
                     const al_harf_1 = baseSkills[9]; 
                     const al_harf_2 = baseSkills[10];
                     const al_harf_3 = baseSkills[11];
                     
-                    // al_word_part_X: نستخدم .substring(1) لإزالة الحرف الأول فقط 
-                    // (الذي يُفترض أنه اللام الزائدة أو ألف الوصل إذا كانت الكلمة تبدأ بألف)
-                    const al_word_part_1 = al_harf_1.substring(1); 
-                    const al_word_part_2 = al_harf_2.substring(1);
-                    const al_word_part_3 = al_harf_3.substring(1);
+                    // al_word_part_X: نستخدم .substring(2) لإزالة أول حرفين ("ا" و "ل") من السلسلة.
+                    // هذا سيضمن بقاء الحرف الأساسي المشكَّل (مثل 'ضَّـ' أو 'عْـ' أو 'سْـ').
+                    const al_word_part_1 = al_harf_1.substring(2); 
+                    const al_word_part_2 = al_harf_2.substring(2);
+                    const al_word_part_3 = al_harf_3.substring(2);
 
-                    // مهارات مدمجة إضافية (التصحيح النهائي)
-                    // (بِالْـ، وَالْـ، كَالْـ، لِلْـ، فَالْـ) + الجزء المتبقي من الكلمة
+                    // مهارات مدمجة إضافية (التصحيح النهائي للغة العربية)
+                    // الآن سنضيف حرف الجر/العطف الصحيح مع "الْـ" التعريف لـ: بِالْـ، وَالْـ، كَالْْـ، لِلْـ، فَالْـ
                     
-                    const extra_1 = 'بِالْ' + al_word_part_1; // بِالْـ + ما تبقى (بِالْـضَّـ أو بِالْـجْـ)
-                    const extra_2 = 'وَالْ' + al_word_part_2; // وَالْـ + ما تبقى
-                    const extra_3 = 'كَالْ' + al_word_part_3; // كَالْـ + ما تبقى
-                    const extra_4 = 'لِلْ' + al_word_part_3; // لِلْـ + ما تبقى
-                    const extra_5 = 'فَالْ' + al_word_part_2; // فَالْـ + ما تبقى
+                    const extra_1 = 'بِالْ' + al_word_part_1; // مثال: بِالْـ + ضَّ = بِالضَّـ أو بِالْعَـ
+                    const extra_2 = 'وَالْ' + al_word_part_2; // مثال: وَالْـ + سَّ = وَالسَّـ أو وَالْعِـ
+                    const extra_3 = 'كَالْ' + al_word_part_3; // مثال: كَالْـ + عِـ = كَالْعِـ
+                    const extra_4 = 'لِلْ' + al_word_part_3; // مثال: لِلْـ + عِـ = لِلْعِـ
+                    const extra_5 = 'فَالْ' + al_word_part_2; // مثال: فَالْـ + سَّ = فَالسَّـ
                     
                     // حقل فارغ لإكمال الـ 24 خانة (3x8)
                     const combined = [
