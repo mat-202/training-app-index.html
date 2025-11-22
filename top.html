@@ -630,7 +630,7 @@
         return { n1: 1, n2: 1, result: 2, requiredDecimals: 0, isRounding: false, op: op };
     }
     
-    // 🌟 وظيفة مساعدة لحساب التقريب
+    // 🌟 وظيفة مساعدة لحساب التقريب (تم التعديل هنا)
     function calculateRounding(number, place) {
         const places = {
             'أقرب عشرة': { value: 10, decimals: 0 },
@@ -650,10 +650,14 @@
             const roundingFactor = value;
             const result = Math.round(number / roundingFactor) * roundingFactor;
             return { result, decimals };
-        } else { // تقريب الأجزاء العشرية
+        } else { // تقريب الأجزاء العشرية (تم التعديل لضمان التقريب الرياضي)
             const powerOfTen = Math.pow(10, decimals);
+            
+            // 💡 الحل: نستخدم Math.round / powerOfTen مباشرة
+            // لتطبيق التقريب الرياضي الصحيح وتجنب مشاكل toFixed()
             const result = Math.round(number * powerOfTen) / powerOfTen;
-            return { result: parseFloat(result.toFixed(decimals)), decimals };
+            
+            return { result: result, decimals };
         }
     }
 
@@ -724,10 +728,12 @@
     function formatNumberDisplay(value, maxDecimals = 0, isRounding = false) {
         if (typeof value === 'string') return value; 
         
+        // إذا كان التقريب لعدد صحيح، نتأكد من عدم وجود منازل عشرية في العرض
         if (isRounding && maxDecimals === 0) {
             return Math.round(value).toLocaleString(ARABIC_LOCALE, { useGrouping: false, maximumFractionDigits: 0 });
         }
         
+        // عرض الأرقام الأخرى بما في ذلك الأجزاء العشرية بعد التقريب
         return value.toLocaleString(ARABIC_LOCALE, {
              useGrouping: false,
              minimumFractionDigits: maxDecimals,
@@ -844,7 +850,11 @@
                  // 2. التقريب الخاطئ إلى منزلة أصغر (خطأ منزلة شائع)
                  if (distractors.size < 3 && placeInfo.offset[0] !== 0) {
                       const offsetValue = placeInfo.offset[0];
-                      const placeName = allPlaces.find(p => Math.abs(calculateRounding(1, p).result - offsetValue) < 0.000001);
+                      // يتم تعديل هذه النقطة لتبحث عن اسم المنزل عبر القيمة المقابلة 
+                      const placeName = allPlaces.find(p => {
+                          const { result: calcResult } = calculateRounding(1, p);
+                          return Math.abs(calcResult - offsetValue) < 0.000001;
+                      });
                       if(placeName) {
                            const { result: altAnswer } = calculateRounding(numberToRound, placeName);
                            if (Math.abs(altAnswer - correct) < placeValue * 1.5) { 
