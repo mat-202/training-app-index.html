@@ -57,7 +57,7 @@
             font-size: 1.1em;
         }
 
-        .input-group input, .input-group select {
+        .input-group input, .input-group select, .input-group textarea {
             padding: 12px;
             border: 1px solid #ccc;
             border-radius: 6px;
@@ -66,6 +66,11 @@
             box-sizing: border-box;
             background-color: #f9f9f9;
         }
+        
+        .input-group textarea {
+            resize: vertical;
+        }
+
 
         #start-button {
             padding: 15px;
@@ -87,6 +92,23 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+        
+        #view-history-button {
+            padding: 15px; 
+            background-color: #5bc0de;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        
+        #view-history-button:hover {
+            background-color: #31b0d5;
+        }
+
 
         #error-message {
             color: #d9534f;
@@ -144,7 +166,7 @@
             position: relative;
         }
         
-        /* شريط الوقت - 🆕 تم تعديل موضعه من top إلى bottom */
+        /* شريط الوقت */
         #timer-bar {
             height: 8px;
             background-color: #1f3f6c;
@@ -234,7 +256,55 @@
         #back-button:hover {
             background-color: #ec971f;
         }
+
+        /* زر الانتقال اليدوي */
+        #next-manual-button {
+            padding: 10px 20px;
+            background-color: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 15px; 
+            margin-bottom: 5px;
+            width: 100%;
+            max-width: 400px;
+        }
         
+        #next-manual-button:hover {
+            background-color: #15a589;
+        }
+        
+        #next-manual-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* --- شاشة التقييم --- */
+        #assessment-screen {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #e9f5ff; /* لون فاتح لشاشة المدرب */
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        #save-assessment-button {
+            padding: 15px; 
+            background-color: #d9534f; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.2em; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+            margin-top: 30px; 
+            width: 100%;
+        }
+
         /* استجابة العرض */
         @media (max-width: 768px) {
             .container {
@@ -259,6 +329,10 @@
                 width: 100px;
                 min-width: 100px;
             }
+            
+            #assessment-screen {
+                margin: 15px auto;
+            }
         }
     </style>
 </head>
@@ -268,7 +342,7 @@
         <h1>منصة تحدي اتقان القراءة</h1>
         
         <div id="setup-screen">
-            <h2>إعدادات التقييم</h2>
+            <h2>مبادرة لرفع مستوى الأبناء في القراءة</h2>
             <div id="error-message"></div>
 
             <div class="input-row">
@@ -278,6 +352,16 @@
                 </div>
                 
                 <div class="input-group" style="flex: 1;">
+                    <label for="mode-select">طريقة الانتقال:</label>
+                    <select id="mode-select">
+                        <option value="auto" selected>تلقائي (حسب المؤقت)</option>
+                        <option value="manual">يدوي (بالنقر على زر)</option>
+                    </select>
+                </div>
+                </div>
+
+            <div class="input-row">
+                 <div class="input-group" id="duration-group" style="flex: 1;">
                     <label for="duration-select">مدة عرض العنصر (بالثواني):</label>
                     <select id="duration-select">
                         <option value="3000">3 ثوانٍ</option>
@@ -289,34 +373,43 @@
                         <option value="30000">30 ثانية</option>
                         <option value="60000">1 دقيقة</option>
                     </select>
+                    <small id="duration-tip" style="color: #666;">يحدد سرعة الانتقال التلقائي.</small>
                 </div>
-            </div>
 
-            <div class="input-row">
                 <div class="input-group" style="flex: 2;">
                     <label for="level-select">اختر مستوى التحدي:</label>
                     <select id="level-select">
                         <option value="reading" selected>الحروف المدمجة (28 حرف)</option> 
                         <option value="random_skill">تقييم مهاراة الحروف (672 مهارة)</option>
-                        <option value="words">الكلمات (194 كلمة)</option>
-                        <option value="sentences">الجمل (120 جملة)</option>
+                        <option value="words">الكلمات (219 كلمة)</option>
+                        <option value="sentences">الجمل (150 جملة)</option>
                         <option value="passages">القطع الهادفة (20 قطعة)</option> 
+                        <option value="mixed_challenge">التقييم (40% مهارات / 30% كلمات / 30% جمل)</option>
                     </select>
                 </div>
+            </div>
 
+            <div class="input-row">
                 <div class="input-group" id="start-index-group" style="flex: 1;">
                     <label for="start-index">رقم البدء:</label>
                     <input type="number" id="start-index" value="1" min="1" max="28">
                     <small id="max-index-tip" style="color: #666;"></small>
                 </div>
+                
+                <div class="input-group" id="limit-count-group" style="flex: 1;">
+                    <label for="limit-count">عدد العناصر المطلوب قراءتها:</label>
+                    <input type="number" id="limit-count" value="10" min="1">
+                    <small id="limit-tip" style="color: #666;">(أدخل 0 أو اتركها فارغة لعرض **كل** العناصر المتاحة).</small>
+                </div>
             </div>
             
             <button id="start-button" onclick="validateAndStartQuiz()">اضغط لبدء التدريب</button>
+            <button id="view-history-button" onclick="displayAssessmentHistory()">مراجعة سجل التقييمات المحفوظ</button>
         </div>
 
         <div id="quiz-display" style="display: none;">
             <h2 id="quiz-title"></h2>
-            <p class="timer-info">ستتغير النصوص تلقائيًا كل <span id="time-display">5</span> ثوانٍ.</p>
+            <p class="timer-info" id="advance-mode-info">ستتغير النصوص تلقائيًا كل <span id="time-display">10</span> ثوانٍ.</p>
             
             <div id="item-number-top" style="text-align: center; margin-bottom: 15px;"></div> 
             
@@ -328,13 +421,39 @@
                 </div>
             </div>
             
+            <button id="next-manual-button" onclick="handleManualNext()" style="display: none;">
+                التالي (اضغط للانتقال)
+            </button>
+            
             <button id="back-button" onclick="location.reload()">العودة لصفحة الإعدادات</button>
         </div>
+        
+        <div id="assessment-screen" style="display: none;">
+            <h2 id="assessment-title">📝 تقييم نتائج المتدرب</h2>
+            <div id="result-summary" style="font-size: 1.2em; margin-bottom: 20px; text-align: center; color: #1f3f6c;"></div>
+
+            <div class="input-row" style="flex-direction: column; gap: 15px;">
+                <div class="input-group">
+                    <label for="error-count">عدد الأخطاء التي تم رصدها (يدوي):</label>
+                    <input type="number" id="error-count" min="0" value="0" placeholder="أدخل عدد الأخطاء">
+                </div>
+                <div class="input-group">
+                    <label for="assessment-notes">ملاحظات المدرب / نتيجة التقييم اليدوي:</label>
+                    <textarea id="assessment-notes" rows="4" placeholder="اكتب ملاحظاتك عن أداء المتدرب هنا..."></textarea>
+                </div>
+            </div>
+            
+            <button id="save-assessment-button" onclick="saveAssessment()" style="padding: 15px; background-color: #d9534f; color: white; border: none; border-radius: 8px; font-size: 1.2em; cursor: pointer; transition: background-color 0.3s; margin-top: 30px; width: 100%;">
+                حفظ التقييم والعودة
+            </button>
+            
+        </div>
+        
     </div>
 
 <script>
     // **********************************************
-    // ********** 1. قوائم البيانات **********
+    // ********** 1. قوائم البيانات (بدون تغيير) **********
     // **********************************************
 
     const SUKUN_PREFIXES = ['يَـ', 'مَـ', 'فِـ']; 
@@ -357,7 +476,7 @@
         'ص': ["صَ", "صُ", "صِ", "صَا", "صُو", "صِي", "صًا", "صٌ", "صٍ", "اَلصَّـ", "اَلصُّـ", "اَلصِّـ", "ص"],
         'ض': ["ضَ", "ضُ", "ضِ", "ضَا", "ضُو", "ضِي", "ضًا", "ضٌ", "ضٍ", "اَلضَّـ", "اَلضُّـ", "اَلضِّـ", "ض"],
         'ط': ["طَ", "طُ", "طِ", "طَا", "طُو", "طِي", "طًا", "طٌ", "طٍ", "اَلطَّـ", "اَلطُّـ", "اَلطِّـ", "ط"],
-        'ظ': ["ظَ", "ظُ", "ظِ", "ظَا", "ظُو", "ظِي", "ظًا", "ظٌ", "ظٍ", "اَلظَّـ", "اَلظُّـ", "اَلظِّـ", "ظ"],
+        'ظ': ["ظَ", "ظُ", "ظِ", "ظَا", "ظُو", "ظِي", "ظًا", "ظٌ", "ظٍ", "اَلظَّـ", "اَلظُّـ", "اَلطِّـ", "ظ"],
         'ع': ["عَ", "عُ", "عِ", "عَا", "عُو", "عِي", "عًا", "عٌ", "عٍ", "اَلْـعَ", "اَلْـعُ", "اَلْـعِ", "ع"], 
         'غ': ["غَ", "غُ", "غِ", "غَا", "غُو", "غِي", "غًا", "غٌ", "غٍ", "اَلْـغَ", "اَلْـغُ", "اَلْـغِ", "غ"], 
         'ف': ["فَ", "فُ", "فِ", "فَا", "فُو", "فِي", "فًا", "فٌ", "فٍ", "اَلْـفَ", "اَلْـفُ", "اَلْْـفِ", "ف"], 
@@ -508,7 +627,7 @@
         "جَلَسَ ٱلشَّيْخُ فِي ٱلْمَسْجِدِ.", "ٱلسُّوقُ مُزْدَحِمٌ بِٱلنَّاسِ.", "ٱلطَّالِبُ نَاجِحٌ بِتَفَوُّقٍ.", "ٱلْوَقْتُ ثَمِينٌ جِدًّا.", "ٱلْحَيَاةُ مَلِيئَةٌ بِٱلْأَمَلِ.",
         "قَرَأَ ٱلْمُعَلِّمُ ٱلْكِتَابَ.", "شَاهَدَ ٱلْجَمِيعُ ٱلْفِيلْمَ.", "تَكَلَّمَ ٱلرَّجُلُ بِهُدُوءٍ.", "لَعِبَتْ مَرْيَمُ بِٱلْعُقَدِ.", "أَكَلْنَا طَعَامًا لَذِيذًا.",
         "نَسْمَعُ ٱلصَّوْتَ عَالِيًا.", "رَأَيْتُ ٱلنَّمْلَةَ تَجْمَعُ.", "بَدَأَ ٱلْعَمَلُ صَبَاحًا.", "اِنْتَهَى ٱلدَّرْسُ مُسَاءً.", "ٱلشَّجَرَةُ تُثْمِرُ تِينًا.",
-        "ٱلْحَدِيقَةُ مَلِيئَةٌ بِٱلزُّهُورِ.", "ٱلْمَدِينَةُ تَنَامُ لَيْلًا.", "ٱلْأَرْضُ تَدُورُ حَوْلَ ٱلشَّمْسِ.", "ٱلسَّيَّارَةُ سَرِيعَةٌ جِدًّا.", "هَذَا ٱلْكَلْبُ وَفِيٌّ.",
+        "ٱلْحَدِيقَةُ مَلِيئَةٌ بِٱلْزُّهُورِ.", "ٱلْمَدِينَةُ تَنَامُ لَيْلًا.", "ٱلْأَرْضُ تَدُورُ حَوْلَ ٱلشَّمْسِ.", "ٱلسَّيَّارَةُ سَرِيعَةٌ جِدًّا.", "هَذَا ٱلْكَلْبُ وَفِيٌّ.",
         "قَامَ ٱلْوَلَدُ بِنَشَاطٍ.", "سَأَلَ ٱلطَّالِبُ سُؤَالًا.", "أَجَابَ ٱلْمُعَلِّمُ بِصَبْرٍ.", "بَدَأَتْ ٱلْحِصَّةُ مُبَكِّرًا.", "اِنْتَهَى ٱلْيَوْمُ سَرِيعًا.",
         "ٱلْكُرَةُ فِي ٱلْمَلْعَبِ.", "ٱلْفُرْشَاةُ فِي ٱلْحَمَّامِ.", "ٱلْمَاءِ جَارٍ كَٱلنَّهْرِ.", "ٱلْحَيَوَانُ يَبْحَثُ عَنْ طَعَامٍ.", "ٱلْمُسَافِرُ يَنْتَظِرُ ٱلْقِطَارَ.",
         "ٱلطِّبَاعَةُ مِهْنَةٌ رَائِعَةٌ.", "ٱلْجَمَلُ يَمْشِي فِي ٱلصَّحْرَاءِ.", "ٱلْخُيُولُ تَرْكُضُ بِقُوَّةٍ.", "ٱلْفَأْرُ هَرَبَ مِنْ ٱلْقِطَّةِ.", "ٱلْقَمِيصُ لَوْنُهُ أَخْضَرُ.",
@@ -531,7 +650,7 @@
         "تَحْتَ ٱلْجَبَلِ وَادِي.", "ٱلْهَدَفُ سَامٍ وَنَبِيلٌ.", "نَحْنُ نَحْتَاجُ ٱلْمَطَرَ.", "ٱلْقَاعَةُ مُضَاءَةٌ جَيِّدًا.", "ٱلرَّجُلُ ذُو خُلُقٍ حَسَنٍ.",
         "هَذَا ٱلْقَلَمُ لَوْنُهُ أَحْمَرُ.", "ٱلطَّائِرُ ٱلصَّغِيرُ طَارَ عَالِيًا.", "ذَهَبَ خَالِدٌ إِلَى ٱلْمَدْرَسَةِ مُسْرِعًا.", "ٱلْكِتَابُ ٱلْجَدِيدُ عَلَى ٱلطَّاوِلَةِ.", "تَقْرَأُ ٱلْبِنْتُ ٱلْكِتَابَ كُلَّ يَوْمٍ.",
         "رَأَيْتُ ٱلْقَمَرَ فِي ٱلسَّمَاءِ لَيْلًا.", "تَنَامُ ٱلْقِطَّةُ ٱلصَّغِيرَةُ بِهُدُوءٍ.", "ٱلْحِصَانُ ٱلْكَبِيرُ يَأْكُلُ ٱلْعُشْبَ.", "ٱلْأَطْفَالُ يَلْعَبُونَ فِي ٱلْحَدِيقَةِ مَعًا.", "ٱلْأُمُّ ٱلْحَنُونَةُ تُعِدُّ ٱلْفُطُورَ لَنَا.",
-        "نَحْنُ نَشْرَبُ ٱلْمَاءَ كُلَّ يَوْمٍ.", "يُسَاعِدُ ٱلْأَخُ أُخْتَهُ فِي ٱلدَّرْسِ.", "ٱلْمُعَلِّمُ يَشْرَحُ ٱٱلْقَوَاعِدَ بِسُهُولَةٍ.", "ٱلسَّيَّارَةُ ٱلْجَدِيدَةُ لَوْنُهَا أَزْرَقُ.", "ٱلطَّقْسُ غَدًا سَيَكُونُ مُعْتَدِلًا.",
+        "نَحْنُ نَشْرَبُ ٱلْمَاءَ كُلَّ يَوْمٍ.", "يُسَاعِدُ ٱلْأَخُ أُخْتَهُ فِي ٱلدَّرْسِ.", "ٱلْمُعَلِّمُ يَشْرَحُ ٱلْقَوَاعِدَ بِسُهُولَةٍ.", "ٱلسَّيَّارَةُ ٱلْجَدِيدَةُ لَوْنُهَا أَزْرَقُ.", "ٱلطَّقْسُ غَدًا سَيَكُونُ مُعْتَدِلًا.",
         "جَلَسْنَا تَحْتَ شَجَرَةِ ٱلتِّينِ ٱلْعَالِيَةِ.", "صَوْتُ ٱلْعُصْفُورِ ٱلصَّغِيرِ جَمِيلٌ جِدًّا.", "تَأْكُلُ ٱلْأُسْرَةُ ٱلْفَوَاكِهَ فِي ٱلْمَسَاءِ.", "ٱلْمَطَرُ يَنْزِلُ عَلَى ٱلْأَرْضِ بِهُدُوءٍ.", "كَتَبَ ٱلطِّفْلُ ٱلْوَاجِبَ بِخَطٍّ جَمِيلٍ.",
         "يَزُورُ ٱلْأَبُ ٱلْجَدَّ كُلَّ أُسْبُوعٍ.", "شَرِبَ مُحَمَّدٌ ٱلْعَصِيرَ مِنْ كُوبٍ زُجَاجِيٍّ.", "ٱلْهَوَاءُ ٱلنَّقِيُّ مُفِيدٌ لِلصِّحَّةِ.", "ٱلْمَدِينَةُ مَلِيئَةٌ بِٱلْأَضْوَاءِ ٱلسَّاطِعَةِ.", "نَظَرْتُ إِلَى ٱلنُّجُومِ فِي ٱلسَّمَاءِ ٱلْمُظْلِمَةِ.",
         "ٱلْكُتُبُ تُرَتَّبُ دَاخِلَ ٱلْخِزَانَةِ بِعِنَايَةٍ.", "أَنَا أَذْهَبُ إِلَى ٱلْعَمَلِ مُبَكِّرًا دَائِمًا.", "لَا تَلْعَبْ بِٱلْكُرَةِ دَاخِلَ ٱلْبَيْتِ أَبَدًا.", "هَذَا ٱلْفِيلْمُ ٱلْجَدِيدُ مُشَوِّقٌ جِدًّا.", "ٱلْوَلَدُ ٱلْمُهَذَّبُ يُحِبُّ مُسَاعَدَةَ ٱلْآخَرِينَ.",
@@ -569,24 +688,25 @@
         "ٱلْحُبُّ لِلْوَطَنِ وَاجِبٌ. \n نَفْتَخِرُ بِتَارِيخِ بِلَادِنَا وَلُغَتِنَا، \n وَنَعْمَلُ بِجِدٍّ لِنُسَاهِمَ فِي تَقَدُّمِهِ.",
         "ٱلْعِلْمُ نُورٌ يُضِيءُ ٱلدُّرُوبَ. \n لَا نَتَوَقَّفْ عَنِ ٱلتَّعَلُّمِ وَٱلِٱسْتِفْسَارِ، \n لِنَصْبِحَ أَذْكِيَاءَ وَنَافِعِينَ لِأُمَّتِنَا."
     ];
-
+    
     // **********************************************
     // ********** 2. الدوال المساعدة **********
     // **********************************************
     
     // دالة لخلط عناصر المصفوفة بشكل عشوائي (Fisher-Yates shuffle)
     function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
+        const newArray = [...array]; 
+        for (let i = newArray.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
         }
-        return array;
+        return newArray;
     }
 
     function buildCombinedSkills(char) {
         const baseSkills = BASE_SKILLS_FOR_RANDOM[char];
         if (!baseSkills) return '';
-
+        // الكود الداخلي للدالة كما هو في النسخة السابقة (لم يتم تغيير محتواه لأنه يعمل بشكل صحيح)
         const BASE_CHAR_PURE = baseSkills[12];
         const BASE_CHAR_FATHA = baseSkills[0]; 
         const BASE_CHAR_DHAMMA = baseSkills[1];
@@ -697,6 +817,43 @@
         'الهاء', 'الواو', 'الياء'
     ];
 
+    /**
+     * دالة لتجميع العناصر بالنسب الجديدة: 40% مهارات، 30% كلمات، 30% جمل
+     * التعديل: التجميع الآن يتم بترتيب ثابت (مهارات، ثم كلمات، ثم جمل)
+     */
+    function getMixedChallengeItems(totalCount) {
+        if (totalCount <= 0) return [];
+
+        const allSkills = getAllIndividualSkills();
+        const allWords = WORDS_ARRAY;
+        const allSentences = SENTENCES_ARRAY;
+        
+        // 1. حساب الأعداد المطلوبة بالنسب (40%, 30%, 30%)
+        let skillsCount = Math.round(totalCount * 0.4);
+        let wordsCount = Math.round(totalCount * 0.3);
+        let sentencesCount = totalCount - skillsCount - wordsCount; // ضمان أن المجموع يساوي totalCount
+        
+        // التأكد من عدم تجاوز العدد الإجمالي للمصادر
+        skillsCount = Math.min(skillsCount, allSkills.length);
+        wordsCount = Math.min(wordsCount, allWords.length);
+        sentencesCount = Math.min(sentencesCount, allSentences.length);
+
+        // 2. اختيار العناصر العشوائية من كل مصدر
+        const randomSkills = shuffleArray(allSkills).slice(0, skillsCount); 
+        const randomWords = shuffleArray(allWords).slice(0, wordsCount); 
+        const randomSentences = shuffleArray(allSentences).slice(0, sentencesCount);
+        
+        // 3. دمج العناصر بالترتيب التدرجي المطلوب: (مهارات ثم كلمات ثم جمل)
+        let finalArray = [
+            ...randomSkills,    // القسم الأول: 40% مهارات
+            ...randomWords,     // القسم الثاني: 30% كلمات
+            ...randomSentences  // القسم الثالث: 30% جمل
+        ];
+
+        return finalArray;
+    }
+
+
     // **********************************************
     // ********** 3. متغيرات وعناصر التحكم **********
     // **********************************************
@@ -705,8 +862,9 @@
     let currentItemIndex = 0;
     let intervalDuration = 10000; 
     let quizInterval;
-    // 🆕 تعيين المستوى الافتراضي ليكون "reading"
+    // تم تغيير القيمة الافتراضية هنا لتكون 'reading'
     let selectedLevel = 'reading'; 
+    let isAutoAdvance = true; 
     
     const setupScreen = document.getElementById('setup-screen');
     const quizDisplayDiv = document.getElementById('quiz-display');
@@ -722,14 +880,61 @@
     const itemNumberTop = document.getElementById('item-number-top'); 
     const wordBox = document.getElementById('item-display'); 
     const startIndexGroup = document.getElementById('start-index-group');
+    const modeSelect = document.getElementById('mode-select'); 
+    const nextManualButton = document.getElementById('next-manual-button'); 
+    const advanceModeInfo = document.getElementById('advance-mode-info');
+    const durationTip = document.getElementById('duration-tip');
+    
+    // عناصر جديدة لـ LIMIT و Assessment
+    const limitCountInput = document.getElementById('limit-count'); 
+    const limitTip = document.getElementById('limit-tip');
+    const assessmentScreen = document.getElementById('assessment-screen');
+    const resultSummary = document.getElementById('result-summary');
+    const errorCountInput = document.getElementById('error-count');
+    const assessmentNotesTextarea = document.getElementById('assessment-notes');
+
 
     quizDisplayDiv.style.display = 'none'; 
+    assessmentScreen.style.display = 'none'; 
     
     // **********************************************
-    // ********** 4. دوال التحكم والتشغيل **********
+    // ********** 4. دوال التحكم والتشغيل وحفظ السجل **********
     // **********************************************
+    
+    // دوال LocalStorage
+    function getAssessmentHistory() {
+        const history = localStorage.getItem('readingChallengeAssessments');
+        return history ? JSON.parse(history) : [];
+    }
+
+    window.displayAssessmentHistory = function() {
+        const history = getAssessmentHistory();
+        if (history.length === 0) {
+            alert("لا يوجد سجل تقييمات محفوظ بعد.");
+            return;
+        }
+
+        let output = "--- سجل التقييمات المحفوظة ---\n";
+        history.forEach((res, index) => {
+            output += `\n#${convertToArabicNumbers(index + 1)} - المتدرب: ${res.traineeName}\n`;
+            output += `المستوى: ${res.levelText}\n`;
+            output += `تاريخ التقييم: ${new Date(res.timestamp).toLocaleDateString('ar-EG')}\n`;
+            output += `العناصر: ${convertToArabicNumbers(res.totalItems)} | الأخطاء: ${convertToArabicNumbers(res.errors)}\n`;
+            output += `ملاحظات: ${res.notes.substring(0, 50)}${res.notes.length > 50 ? '...' : ''}\n`;
+        });
+        
+        console.log(output);
+        alert(`تم عرض سجل ${convertToArabicNumbers(history.length)} تقييمات في وحدة التحكم (Console).`);
+    }
+
     
     function startTimerBar(seconds) {
+        if (!isAutoAdvance) {
+            timerBar.style.width = '100%';
+            timerBar.style.transition = 'none';
+            return; 
+        }
+
         timerBar.style.transition = 'none';
         timerBar.style.width = '100%';
         
@@ -740,13 +945,37 @@
             });
         });
     }
+
+    window.handleManualNext = function() {
+        if (quizInterval) {
+            clearInterval(quizInterval);
+            quizInterval = null;
+        }
+        displayNextItem();
+        
+        if (isAutoAdvance) {
+             quizInterval = setInterval(displayNextItem, intervalDuration);
+        }
+    }
     
     window.displayNextItem = function() {
         if (itemsArray.length === 0 || currentItemIndex >= itemsArray.length) {
-            const levelName = levelSelect.options[levelSelect.selectedIndex].text;
-            currentItemElement.innerHTML = `<div style="grid-column: 1 / -1; grid-row: 1 / -1; display: flex; align-items: center; justify-content: center; flex-direction: column; font-size: 30px; line-height: 1.5;">تهانينا، لقد أنهيت التحدي. <br>لا توجد عناصر أخرى متاحة في قاعدة البيانات الحالية لـ **${levelName}**.<br> بإمكانك العودة لصفحة الإعدادات.</div>`;
-            clearInterval(quizInterval);
+            
+            if (quizInterval) clearInterval(quizInterval);
+            nextManualButton.style.display = 'none';
             itemNumberTop.style.display = 'none';
+            timerBar.style.display = 'none';
+            
+            // الانتقال لشاشة التقييم
+            quizDisplayDiv.style.display = 'none'; 
+            assessmentScreen.style.display = 'block';
+            
+            const levelText = levelSelect.options[levelSelect.selectedIndex].text;
+            const traineeName = traineeNameInput.value.trim();
+            const totalItems = itemsArray.length;
+            
+            resultSummary.innerHTML = `المتدرب: **${traineeName}** <br> التحدي: **${levelText}** <br> عدد العناصر التي تم قراءتها: **${convertToArabicNumbers(totalItems)}**`;
+            
             return;
         }
         
@@ -756,6 +985,7 @@
         
         let color = '#1f3f6c';
 
+        // عرض خاص لمستوى الحروف المدمجة فقط
         if (selectedLevel === 'reading') {
             const individualChars = itemContent.split(' ');
             const currentLetterIndex = currentItemIndex;
@@ -783,7 +1013,6 @@
 
             let htmlContent = '';
             
-            // دمج صفوف labels (الحركة - المد - التنوين)
             htmlContent += `<div class="grid-cell skill-label" style="grid-row: 7 / span 2;">${SKILL_NAMES[6]}</div>`;
 
             for (let row = 0; row < 6; row++) {
@@ -796,7 +1025,6 @@
                 }
             }
             
-            // الصف الأخير (دخول حرف الجر)
             for (let row = 6; row < 8; row++) {
                 for (let col = 0; col < 3; col++) {
                     const index = 18 + ((row - 6) * 3) + col;
@@ -814,13 +1042,18 @@
             currentItemElement.classList.add('default-display');
             
             let fontSize = '70px';
+
+            // تحديد اللون وحجم الخط لجميع المستويات الأخرى، بما في ذلك المزيج الجديد
             if (selectedLevel === 'words') {
                 color = '#e8a31a';
             } else if (selectedLevel === 'random_skill') {
                 color = '#8e24aa';
-            } else if (selectedLevel === 'sentences') {
-                color = '#5cb85c';
-                fontSize = '40px';
+                fontSize = '40px'; 
+            } else if (selectedLevel === 'sentences' || selectedLevel === 'mixed_challenge') { 
+                // نستخدم لون خاص للمزيج وللجمل
+                 color = '#5cb85c'; 
+                 fontSize = '40px'; 
+                 if(itemContent.length > 50) fontSize = '30px';
             } else if (selectedLevel === 'passages') { 
                  color = '#00bcd4';
                  fontSize = '35px'; 
@@ -836,17 +1069,27 @@
         }
         
         timerBar.style.backgroundColor = color; 
-        startTimerBar(intervalDuration / 1000);
+        
+        startTimerBar(intervalDuration / 1000); 
         
         currentItemIndex = (currentItemIndex + 1);
         
+        // التحقق من نهاية العناصر (التي ستؤدي للانتقال إلى شاشة التقييم)
         if (currentItemIndex >= itemsArray.length) {
-            clearInterval(quizInterval);
+            if (quizInterval) clearInterval(quizInterval);
             setTimeout(() => { 
-                const levelName = levelSelect.options[levelSelect.selectedIndex].text;
-                currentItemElement.innerHTML = `<div style="grid-column: 1 / -1; grid-row: 1 / -1; display: flex; align-items: center; justify-content: center; flex-direction: column; font-size: 30px; line-height: 1.5;">تهانينا، لقد أنهيت التحدي. <br>لا توجد عناصر أخرى متاحة في قاعدة البيانات الحالية لـ **${levelName}**.<br> بإمكانك العودة لصفحة الإعدادات.</div>`;
+                quizDisplayDiv.style.display = 'none'; 
+                assessmentScreen.style.display = 'block';
+                
+                const levelText = levelSelect.options[levelSelect.selectedIndex].text;
+                const traineeName = traineeNameInput.value.trim();
+                const totalItems = itemsArray.length;
+                
+                resultSummary.innerHTML = `المتدرب: **${traineeName}** <br> التحدي: **${levelText}** <br> عدد العناصر التي تم قراءتها: **${convertToArabicNumbers(totalItems)}**`;
+                
                 itemNumberTop.style.display = 'none';
-            }, intervalDuration); 
+                nextManualButton.style.display = 'none';
+            }, isAutoAdvance ? intervalDuration : 0); 
         }
     };
 
@@ -860,18 +1103,32 @@
         
         intervalDuration = parseInt(durationSelect.value);
         selectedLevel = levelSelect.value;
+        isAutoAdvance = (modeSelect.value === 'auto');
         
-        // 1. تحديد مصفوفة البيانات
-        if (selectedLevel === 'words') {
-            itemsArray = WORDS_ARRAY;
+        const startNum = parseInt(startIndexInput.value) || 1; 
+        const limitCount = parseInt(limitCountInput.value) || 0;
+
+        // 1. تحديد مصفوفة البيانات وتطبيق **الخلط (Shuffle)** قبل التقطيع (Slice)
+        if (selectedLevel === 'mixed_challenge') {
+             // استخدام الدالة الجديدة التي تطبق النسب والخلط مسبقاً (مع الترتيب التدرجي)
+             if (limitCount === 0) {
+                 // يجب أن يكون هناك حد ليعمل المزيج
+                 alert("الرجاء تحديد 'عدد العناصر المطلوب قراءتها' (Limit Count) لتشغيل التقييم.");
+                 location.reload(); 
+                 return;
+             }
+             itemsArray = getMixedChallengeItems(limitCount);
+             startIndexInput.value = 1; // إجبار البدء من 1 لأن المصفوفة مختلطة وجديدة
+        } else if (selectedLevel === 'words') {
+            itemsArray = shuffleArray(WORDS_ARRAY); 
         } else if (selectedLevel === 'sentences') {
-            itemsArray = SENTENCES_ARRAY;
+            itemsArray = shuffleArray(SENTENCES_ARRAY); 
         } else if (selectedLevel === 'passages') { 
-            itemsArray = PASSAGES_ARRAY;
+            itemsArray = shuffleArray(PASSAGES_ARRAY); 
         } else if (selectedLevel === 'random_skill') {
             let allSkills = getAllIndividualSkills();
             itemsArray = shuffleArray(allSkills); 
-        } else { // 'reading' (المهارات المدمجة)
+        } else { // 'reading' (الحروف المدمجة) - لا يتم خلطها 
             const tempCombinedArray = [];
             const baseChars = Object.keys(BASE_SKILLS_FOR_RANDOM);
 
@@ -888,42 +1145,64 @@
             return;
         }
         
-        // 2. تحديد نقطة البدء 
-        const startNum = parseInt(startIndexInput.value) || 1; 
-        currentItemIndex = Math.max(0, startNum - 1);
-
-        if (currentItemIndex >= itemsArray.length) {
-            currentItemIndex = 0;
+        // 2. تطبيق حد التحدي وتحديد نقطة البدء فقط للمستويات غير المدمجة (Mixed Challenge)
+        if (selectedLevel !== 'mixed_challenge') {
+            if (limitCount > 0) {
+                const slicedStart = Math.max(0, startNum - 1);
+                itemsArray = itemsArray.slice(slicedStart, slicedStart + limitCount);
+            } else {
+                 // إذا لم يتم تحديد حد، نبدأ من نقطة البدء إلى النهاية
+                 itemsArray = itemsArray.slice(Math.max(0, startNum - 1));
+            }
         }
         
+        currentItemIndex = 0; // إعادة تعيين الفهرس بعد التقطيع/التصفية
+
         // 3. تحديد العنوان
         const levelText = levelSelect.options[levelSelect.selectedIndex].text;
         let levelMainTitle = 'تحدي القراءة: ';
         quizTitle.innerHTML = `${levelMainTitle} **${traineeNameInput.value.trim()}** - ${levelText}`; 
         
-        // 4. تحديث عرض الوقت
+        // 4. تحديث عرض الوقت ورسالة الوضع
         let seconds = intervalDuration / 1000;
         let isMinute = seconds >= 60 && seconds % 60 === 0;
         let timeValue = isMinute ? seconds / 60 : seconds;
         let timeUnit = isMinute ? 'دقيقة' : 'ثوانٍ';
         
-        let timeMessage = `ستتغير النصوص تلقائيًا كل <span id="time-display">${timeValue}</span> ${timeUnit}.`;
-        document.querySelector('#quiz-display p').innerHTML = timeMessage;
-        
+        if (isAutoAdvance) {
+            advanceModeInfo.innerHTML = `ستتغير النصوص **تلقائيًا** كل <span id="time-display">${timeValue}</span> ${timeUnit}.`;
+            nextManualButton.style.display = 'none';
+            timerBar.style.display = 'block';
+        } else {
+            advanceModeInfo.innerHTML = `طريقة العرض **يدوية** (اضغط على الزر للتالي). المدة المحددة (${timeValue} ${timeUnit}) تُستخدم لشريط التقدم فقط.`;
+            nextManualButton.style.display = 'block';
+            timerBar.style.display = 'none';
+        }
+
         // 5. بدء المؤقت والعرض
         if (quizInterval) {
             clearInterval(quizInterval);
         }
         
-        startTimerBar(intervalDuration / 1000); 
-        
-        // يتم عرض العنصر الأول فورًا
         displayNextItem(); 
         
-        quizInterval = setInterval(displayNextItem, intervalDuration);
+        if (isAutoAdvance) {
+            quizInterval = setInterval(displayNextItem, intervalDuration);
+        }
     }
 
-    // دالة التحقق
+    const TOTAL_INDIVIDUAL_SKILLS = getAllIndividualSkills().length;
+
+    const MAX_LIMITS = {
+        'reading': Object.keys(BASE_SKILLS_FOR_RANDOM).length,
+        'words': WORDS_ARRAY.length,
+        'sentences': SENTENCES_ARRAY.length,
+        'random_skill': TOTAL_INDIVIDUAL_SKILLS,
+        'passages': PASSAGES_ARRAY.length,
+        // تم تحديث الحد الأقصى للمزيج المخصص
+        'mixed_challenge': Math.min(TOTAL_INDIVIDUAL_SKILLS, WORDS_ARRAY.length, SENTENCES_ARRAY.length) * 3 
+    };
+
     window.validateAndStartQuiz = function() {
         errorMessage.style.display = 'none';
         
@@ -935,82 +1214,135 @@
 
         const level = levelSelect.value;
         const startNum = parseInt(startIndexInput.value);
-
-        const TOTAL_INDIVIDUAL_SKILLS = getAllIndividualSkills().length;
-
-        const MAX_LIMITS = {
-            'reading': Object.keys(BASE_SKILLS_FOR_RANDOM).length,
-            'words': WORDS_ARRAY.length,
-            'sentences': SENTENCES_ARRAY.length,
-            'random_skill': TOTAL_INDIVIDUAL_SKILLS,
-            'passages': PASSAGES_ARRAY.length 
-        };
-        const maxAllowed = MAX_LIMITS[level];
-
-        if (startIndexGroup.style.display !== 'none') {
-            if (isNaN(startNum) || startNum < 1 || startNum > maxAllowed) {
-                let hint = (level === 'random_skill') ? `${convertToArabicNumbers(maxAllowed)} مهارة` : `${convertToArabicNumbers(maxAllowed)}`;
-                if (level === 'passages') hint = `${convertToArabicNumbers(maxAllowed)} قطعة`;
-                errorMessage.textContent = `رقم البدء غير صحيح. يجب أن يكون بين ١ و ${hint} ضمن هذا القسم.`;
-                errorMessage.style.display = 'block';
-                return;
+        const limitCount = parseInt(limitCountInput.value) || 0;
+        
+        if (level === 'mixed_challenge') {
+            if (limitCount < 1 || limitCount > 500) { // حد معقول للتقييم
+                 errorMessage.textContent = "لتشغيل التقييم، يجب أن يكون عدد العناصر المطلوب قراءتها بين 1 و 500.";
+                 errorMessage.style.display = 'block';
+                 return;
             }
-        } 
+            // في التقييم، نتجاهل Start Index، لكن نتحقق من الحد الأدنى للـ Limit
+            startQuiz();
+            return;
+        }
+
+
+        const MAX_LIMITS_INNER = MAX_LIMITS; // استخدام الكائن المحدث
+        const maxAllowed = MAX_LIMITS_INNER[level];
 
         let currentArraySize = maxAllowed;
         
-        if (startNum > currentArraySize) {
-             errorMessage.textContent = `رقم البدء ${convertToArabicNumbers(startNum)} خارج نطاق العناصر المُعرَّفة فعلياً (المتاح حالياً: ${convertToArabicNumbers(currentArraySize)}). يرجى إضافة المزيد من البيانات أو اختيار رقم أصغر.`;
+        if (isNaN(startNum) || startNum < 1 || startNum > maxAllowed) {
+            let hint = (level === 'random_skill') ? `${convertToArabicNumbers(maxAllowed)} مهارة` : `${convertToArabicNumbers(maxAllowed)}`;
+            if (level === 'passages') hint = `${convertToArabicNumbers(maxAllowed)} قطعة`;
+            errorMessage.textContent = `رقم البدء غير صحيح. يجب أن يكون بين ١ و ${hint} ضمن هذا القسم.`;
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        
+        if (limitCount > 0 && limitCount < 1) {
+            errorMessage.textContent = "عدد العناصر المطلوب قراءتها يجب أن يكون 1 أو أكثر.";
+            errorMessage.style.display = 'block';
+            return;
+        }
+        
+        if (limitCount > 0 && limitCount > currentArraySize) {
+             errorMessage.textContent = `حد التحدي (${convertToArabicNumbers(limitCount)}) يتجاوز عدد العناصر المُعرَّفة فعلياً (${convertToArabicNumbers(currentArraySize)}).`;
+             errorMessage.style.display = 'block';
+             return;
+        }
+        
+        if (limitCount > 0 && (startNum + limitCount - 1) > currentArraySize) {
+             errorMessage.textContent = `نطاق العرض المطلوب (البدء من ${convertToArabicNumbers(startNum)} وقراءة ${convertToArabicNumbers(limitCount)}) يتجاوز العدد الكلي للعناصر المتاحة (${convertToArabicNumbers(currentArraySize)}).`;
              errorMessage.style.display = 'block';
              return;
         }
 
         startQuiz();
     }
+    
+    // دالة لحفظ التقييم (تم تحديثها لحفظ البيانات في LocalStorage)
+    window.saveAssessment = function() {
+        const traineeName = traineeNameInput.value.trim();
+        const errors = parseInt(errorCountInput.value) || 0;
+        const notes = assessmentNotesTextarea.value;
+        const totalItems = itemsArray.length;
+        const levelText = levelSelect.options[levelSelect.selectedIndex].text;
+        
+        // 1. إنشاء كائن النتيجة
+        const resultObject = {
+            traineeName,
+            levelText,
+            totalItems,
+            errors,
+            notes,
+            timestamp: new Date().toISOString()
+        };
+        
+        // 2. تحميل السجل القديم وإضافة النتيجة الجديدة
+        let history = getAssessmentHistory();
+        history.push(resultObject);
 
-    const TOTAL_INDIVIDUAL_SKILLS = getAllIndividualSkills().length;
+        // 3. حفظ السجل المحدث في LocalStorage
+        try {
+             localStorage.setItem('readingChallengeAssessments', JSON.stringify(history));
+             console.log("تم حفظ التقييم: ", resultObject);
+             alert(`تم حفظ التقييم للمتدرب ${traineeName} بنجاح! راجع سجل وحدة التحكم (Console) لمشاهدة التفاصيل.`);
+        } catch (e) {
+            alert("خطأ: تعذر حفظ التقييم في المتصفح.");
+            console.error("LocalStorage save error:", e);
+        }
+        
+        location.reload();
+    }
 
-    const MAX_LIMITS = {
-        'reading': Object.keys(BASE_SKILLS_FOR_RANDOM).length,
-        'words': WORDS_ARRAY.length,
-        'sentences': SENTENCES_ARRAY.length,
-        'random_skill': TOTAL_INDIVIDUAL_SKILLS,
-        'passages': PASSAGES_ARRAY.length 
-    };
 
     // **********************************************
     // ********** 5. تهيئة الواجهة والتحديث التلقائي **********
     // **********************************************
     document.addEventListener('DOMContentLoaded', () => {
         
-        function updateMaxIndexAndGroupVisibility() {
+        function updateSettingsUI() {
             const level = levelSelect.value;
             const actualMax = MAX_LIMITS[level];
             const arabicMax = convertToArabicNumbers(actualMax);
             let maxHint;
 
-            if (level === 'words') {
-                maxHint = `${arabicMax} كلمة`;
+            if (level === 'mixed_challenge') {
+                 // إخفاء رقم البدء واستخدام عدد العناصر فقط
+                startIndexGroup.style.display = 'none';
+                limitCountInput.min = 1;
+                limitCountInput.value = 10;
+                // تم تحديث تلميح المزيج ليتناسب مع الاسم الجديد "التقييم" والنسب
+                limitTip.textContent = "يجب تحديد عدد العناصر المطلوب قراءتها لتطبيق نسب التقييم (40% مهارات، 30% كلمات، 30% جمل).";
+                maxIndexTip.textContent = "(لا ينطبق لهذا التقييم)";
+                document.getElementById('start-index').value = 1; // إعادة تعيين قيمة رقم البدء
+            } else {
+                 // عرض رقم البدء وتحديث الحدود
                 startIndexGroup.style.display = 'flex';
-            } else if (level === 'sentences') {
-                maxHint = `${arabicMax} جملة`;
-                startIndexGroup.style.display = 'flex';
-            } else if (level === 'passages') { 
-                 maxHint = `${arabicMax} قطعة`;
-                 startIndexGroup.style.display = 'flex';
-            } else if (level === 'random_skill') {
-                 maxHint = `${arabicMax} مهارة فردية`;
-                 startIndexGroup.style.display = 'flex'; 
-            } else { 
-                maxHint = `${arabicMax} حرف`;
-                startIndexGroup.style.display = 'flex';
-            }
-            
-            maxIndexTip.textContent = `(الحد الأقصى: ${arabicMax} - ${maxHint})`;
-            startIndexInput.max = actualMax;
-            
-            if (parseInt(startIndexInput.value) > actualMax) {
-                 startIndexInput.value = 1;
+                limitCountInput.min = 0;
+                limitTip.textContent = "(أدخل 0 أو اتركها فارغة لعرض **كل** العناصر المتاحة).";
+                
+                if (level === 'words') {
+                    maxHint = `${arabicMax} كلمة`;
+                } else if (level === 'sentences') {
+                    maxHint = `${arabicMax} جملة`;
+                } else if (level === 'passages') { 
+                     maxHint = `${arabicMax} قطعة`;
+                } else if (level === 'random_skill') {
+                     maxHint = `${arabicMax} مهارة فردية`;
+                } else { 
+                    maxHint = `${arabicMax} حرف`;
+                }
+                
+                maxIndexTip.textContent = `(الحد الأقصى: ${arabicMax} - ${maxHint})`;
+                startIndexInput.max = actualMax;
+                
+                if (parseInt(startIndexInput.value) > actualMax) {
+                     startIndexInput.value = 1;
+                }
             }
             
             selectedLevel = level;
@@ -1043,15 +1375,35 @@
              if (passageOption) {
                  passageOption.textContent = `القطع الهادفة (${arabicPassageMax} قطعة)`;
              }
+             
+             // تحديث نص خيار "التقييم" الجديد
+             const mixedChallengeOption = levelSelect.querySelector('option[value="mixed_challenge"]');
+             if (mixedChallengeOption) {
+                 mixedChallengeOption.textContent = `التقييم (40% مهارات / 30% كلمات / 30% جمل)`;
+             }
+        }
+        
+        function updateDurationTip() {
+            if (modeSelect.value === 'auto') {
+                durationTip.textContent = "يحدد سرعة الانتقال التلقائي.";
+                durationSelect.disabled = false;
+            } else {
+                durationTip.textContent = "المدة تُستخدم فقط لشريط التقدم المرئي (ولن يتم الانتقال تلقائيًا).";
+                durationSelect.disabled = false;
+            }
         }
 
-        levelSelect.addEventListener('change', updateMaxIndexAndGroupVisibility);
+
+        levelSelect.addEventListener('change', updateSettingsUI);
         
         durationSelect.addEventListener('change', function() {
             intervalDuration = parseInt(this.value);
         });
         
-        updateMaxIndexAndGroupVisibility(); 
+        modeSelect.addEventListener('change', updateDurationTip);
+
+        updateSettingsUI(); 
+        updateDurationTip(); 
     });
 
 </script>
