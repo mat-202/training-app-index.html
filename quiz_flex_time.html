@@ -347,9 +347,9 @@
 
         // التعديل لتجنب تكرار الحروف (مثال: 'ييْ' أو 'ددِّ')
         // تم استبدال 'يَـ' بـ 'أَ' في السكون
-        const SUKUN_PREFIXES = ['يَـ', 'مَـ', 'فِـ']; 
-        // تم استبدال 'وَ' و 'دَ' بـ 'لَـ' و 'بِـ' في الشدة
-        const SHADDAH_PREFIXES = [ 'لَـ', 'تُـ', 'بِـ'];
+        const SUKUN_PREFIXES = ['أَـ', 'مَـ', 'فِـ']; 
+        // تم استبدال 'وَ' و 'دَ' بـ 'لَـ' و 'تُـ' بـ 'نُـ' في الشدة
+        const SHADDAH_PREFIXES = [ 'لَـ', 'نُـ', 'بِـ'];
         
         // بيانات المهارات المدمجة (28 حرف) - لم يتم تعديلها بشكل مباشر
         const BASE_SKILLS_FOR_RANDOM = {
@@ -588,18 +588,24 @@
             const BASE_CHAR_KASRA = baseSkills[2]; // بِ
 
             // 3. السكون والشدة...
-            const sukun_1 = SUKUN_PREFIXES[0] + BASE_CHAR_PURE + 'ْ'; // أَـبْ (تم تجنب ييْ)
+            const sukun_1 = SUKUN_PREFIXES[0] + BASE_CHAR_PURE + 'ْ'; // أَـبْ 
             const sukun_2 = SUKUN_PREFIXES[1] + BASE_CHAR_PURE + 'ْ'; // مُـبْ
-            const sukun_3 = SUKUN_PREFIXES[2] + BASE_CHAR_PURE + 'ْ'; // فِـبْ
+            let sukun_3 = SUKUN_PREFIXES[2] + BASE_CHAR_PURE + 'ْ'; // فِـبْ
 
             // بناء الشدة باستخدام الحرف النقي (لتجنب الحركات الزائدة)
-            const shaddah_1 = SHADDAH_PREFIXES[0] + BASE_CHAR_PURE + 'َّ'; // لَـبَّ (تم تجنب وَّوَّ)
-            const shaddah_2 = SHADDAH_PREFIXES[1] + BASE_CHAR_PURE + 'ُّ'; // نُـبُّ
-            let shaddah_3 = SHADDAH_PREFIXES[2] + BASE_CHAR_PURE + 'ِّ'; // بِـبِّ (تم تجنب دِّدِّ)
+            const shaddah_1 = SHADDAH_PREFIXES[0] + BASE_CHAR_PURE + 'َّ'; // لَـبَّ 
+            let shaddah_2 = SHADDAH_PREFIXES[1] + BASE_CHAR_PURE + 'ُّ'; // نُـبُّ
+            let shaddah_3 = SHADDAH_PREFIXES[2] + BASE_CHAR_PURE + 'ِّ'; // بِـبِّ 
 
-            // ** التعديل الأول: تطبيق النبرة على شدة الألف المكسورة **
+            // ** التعديلات الخاصة بحرف الألف (الهمزة) **
             if (char === 'أ') {
-                 // شدة مكسورة يجب أن تكون على نبرة 
+                 // ** التعديل الإملائي الأول: السكون المكسور على نبرة **
+                 sukun_3 = SUKUN_PREFIXES[2] + 'ئْ'; // فِئْـ
+                 
+                 // ** التعديل الإملائي الثاني: الشدة المضمومة على واو **
+                 shaddah_2 = SHADDAH_PREFIXES[1] + 'ؤُّ'; // نُؤُّ
+
+                 // (التعديل السابق) شدة مكسورة يجب أن تكون على نبرة 
                  shaddah_3 = SHADDAH_PREFIXES[2] + 'ئِّ'; // بِـئِّ
             }
 
@@ -665,6 +671,7 @@
                 if (char === 'أ') {
                     extra_1 = 'بِالْـأَ'; 
                     extra_2 = 'وَالْـأُ'; 
+                    // تعديل الهمزة المكسورة لتصبح على نبرة بعد الكاف واللام 
                     extra_3 = 'كَالْـئِ'; 
                     extra_4 = 'لِلْـئِ'; 
                     extra_5 = 'فَالْـأُ'; 
@@ -676,8 +683,8 @@
                 baseSkills[0], baseSkills[1], baseSkills[2], 
                 baseSkills[3], baseSkills[4], baseSkills[5], 
                 baseSkills[6], baseSkills[7], baseSkills[8], 
-                sukun_1, sukun_2, sukun_3, 
-                shaddah_1, shaddah_2, shaddah_3, 
+                sukun_1, sukun_2, sukun_3, // تم تعديل sukun_3 هنا
+                shaddah_1, shaddah_2, shaddah_3, // تم تعديل shaddah_2 و shaddah_3 هنا
                 al_harf_1, al_harf_2, al_harf_3, 
                 extra_1, extra_2, extra_3, 
                 extra_4, extra_5, '', 
