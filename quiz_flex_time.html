@@ -40,7 +40,6 @@
             padding-bottom: 15px;
         }
 
-
         /* --- شاشة الإعدادات --- */
         #setup-screen {
             display: flex;
@@ -91,7 +90,6 @@
             line-height: 1.4;
         }
 
-
         #start-button {
             padding: 18px;
             background-color: #1f3f6c;
@@ -131,7 +129,6 @@
             background-color: #4cae4c;
             transform: translateY(-1px);
         }
-
 
         #error-message {
             color: #d9534f;
@@ -421,8 +418,8 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
         const skills = BASE_SKILLS_FOR_RANDOM[char];
         if (!skills) return '';
         
-        // نأخذ الـ 24 مهارة الأولى فقط (آخر عنصر هو الحرف الأصلي ونتجاهله في عرض المهارات)
-        const combined = skills.slice(0, 24); 
+        // نأخذ الـ 23 مهارة الأولى فقط (دمج المربع الثاني والثالث من السطر الأخير)
+        const combined = skills.slice(0, 23); 
         return combined.join(' ');
     }
     
@@ -434,8 +431,8 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
         baseChars.forEach(char => {
             const skills = BASE_SKILLS_FOR_RANDOM[char];
              if (skills) {
-                // نأخذ الـ 24 مهارة الأولى فقط (نتجاهل الحرف الأصلي في النهاية)
-                allSkills = allSkills.concat(skills.slice(0, 24));
+                // نأخذ الـ 23 مهارة الأولى فقط (دمج المربع الثاني والثالث من السطر الأخير)
+                allSkills = allSkills.concat(skills.slice(0, 23));
             }
         });
         return allSkills;
@@ -483,7 +480,6 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
         return finalArray;
     }
 
-
     // **********************************************
     // ********** 3. متغيرات وعناصر التحكم **********
     // **********************************************
@@ -528,7 +524,6 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
     const praiseScreen = document.getElementById('praise-screen');
     const scoreResultDiv = document.getElementById('score-result');
     const praiseMessageDiv = document.getElementById('praise-message');
-
 
     quizDisplayDiv.style.display = 'none'; 
     assessmentScreen.style.display = 'none'; 
@@ -633,10 +628,21 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
             for (let row = 0; row < 8; row++) {
                 htmlContent += `<div class="grid-cell skill-label" style="grid-row: ${row + 1};">${SKILL_NAMES[row]}</div>`;
                 for (let col = 0; col < 3; col++) {
-                    const char = individualChars[skillIndexCounter] || '';
-                    const displayChar = char.trim() === '' ? '&nbsp;' : char;
-                    htmlContent += `<div class="grid-cell" style="grid-row: ${row + 1}; grid-column: ${col + 2}; border-color: #a0c0e0;">${displayChar}</div>`;
-                    skillIndexCounter++;
+                    // دمج المربع الثاني والثالث من السطر الأخير
+                    if (row === 7 && col === 1) {
+                        // المربع الثاني من السطر الأخير يدمج مع المربع الثالث
+                        const char1 = individualChars[skillIndexCounter] || '';
+                        const char2 = individualChars[skillIndexCounter+1] || '';
+                        const displayChar = (char1 + ' ' + char2).trim() === '' ? '&nbsp;' : char1 + ' ' + char2;
+                        htmlContent += `<div class="grid-cell" style="grid-row: ${row + 1}; grid-column: ${col + 2} / ${col + 4}; border-color: #a0c0e0;">${displayChar}</div>`;
+                        skillIndexCounter += 2; // تخطي المربع الثالث
+                        break; // لا نضيف المربع الثالث لأنه تم دمجه
+                    } else {
+                        const char = individualChars[skillIndexCounter] || '';
+                        const displayChar = char.trim() === '' ? '&nbsp;' : char;
+                        htmlContent += `<div class="grid-cell" style="grid-row: ${row + 1}; grid-column: ${col + 2}; border-color: #a0c0e0;">${displayChar}</div>`;
+                        skillIndexCounter++;
+                    }
                 }
             }
             
@@ -681,7 +687,6 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
         
         currentItemIndex += 1;
     };
-
 
     window.startQuiz = function() {
         const startQuizBtn = document.getElementById('start-button');
@@ -831,7 +836,6 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
             return;
         }
 
-
         const MAX_LIMITS_INNER = MAX_LIMITS; 
         const maxAllowed = MAX_LIMITS_INNER[level];
 
@@ -947,7 +951,6 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
         
         displayPraiseScreen(traineeName, score);
     }
-
 
     // **********************************************
     // ********** 5. تهيئة الواجهة والتحديث التلقائي (تم التعديل هنا) **********
@@ -1065,7 +1068,6 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
                 durationSelect.disabled = false;
             }
         }
-
 
         levelSelect.addEventListener('change', updateSettingsUI);
         
