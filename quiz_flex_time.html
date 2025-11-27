@@ -654,13 +654,13 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
                         // استبدال المربع الثاني في السطر السابع بالمربع الأول في السطر الثامن
                         if (row === 6 && col === 1) {
                             // المربع الثاني في السطر السابع - نستبدله بالمربع الأول من السطر الثامن
-                            const charFromRow6 = individualChars[21] || ''; // المربع الأول من السطر الثامن (index 21)
+                            const charFromRow6 = individualChars[22] || ''; // المربع الأول من السطر الثامن (index 22)
                             const displayChar = charFromRow6.trim() === '' ? '&nbsp;' : charFromRow6;
                             htmlContent += `<div class="grid-cell" style="grid-row: ${row + 1}; grid-column: ${col + 2}; border-color: #a0c0e0;">${displayChar}</div>`;
                             skillIndexCounter++; // نزيد العداد فقط مرة واحدة
                         } else if (row === 7 && col === 0) {
                             // المربع الأول في السطر الثامن - نستبدله بالمربع الثاني من السطر السابع
-                            const charFromRow6 = individualChars[19] || ''; // المربع الثاني من السطر السابع (index 19)
+                            const charFromRow6 = individualChars[22] || ''; // المربع الثاني من السطر السابع (index 22)
                             const displayChar = charFromRow6.trim() === '' ? '&nbsp;' : charFromRow6;
                             htmlContent += `<div class="grid-cell" style="grid-row: ${row + 1}; grid-column: ${col + 2}; border-color: #a0c0e0;">${displayChar}</div>`;
                             skillIndexCounter++; // نزيد العداد فقط مرة واحدة
