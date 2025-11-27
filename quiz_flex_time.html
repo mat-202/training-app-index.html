@@ -661,7 +661,7 @@ const SENTENCES_ARRAY = ["ٱلشَّمْسُ أَشْرَقَتْ.", "ٱلْقَ
                         } else if (row === 7 && col === 0) {
                             // المربع الأول في السطر الثامن - نستبدله بالمربع الثاني من السطر السابع
                             const charFromRow13
-                                = individualChars[19] || ''; // المربع الثاني من السطر السابع (index 19)
+                                = individualChars[19] || ''; // المربع الثاني من السطر السابع (index 21)
                             const displayChar = charFromRow13.trim() === '' ? '&nbsp;' : charFromRow13;
                             htmlContent += `<div class="grid-cell" style="grid-row: ${row + 1}; grid-column: ${col + 2}; border-color: #a0c0e0;">${displayChar}</div>`;
                             skillIndexCounter++; // نزيد العداد فقط مرة واحدة
