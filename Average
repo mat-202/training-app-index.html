@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة تعديل الأسهم المتطورة</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #059669;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px;
+        }
+        .container {
+            background: var(--card); padding: 2rem; border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%; max-width: 480px;
+        }
+        .tabs {
+            display: flex; background: #e2e8f0; padding: 5px;
+            border-radius: 0.75rem; margin-bottom: 2rem;
+        }
+        .tab {
+            flex: 1; padding: 10px; text-align: center; cursor: pointer;
+            border-radius: 0.5rem; font-weight: bold; font-size: 0.9rem;
+            transition: 0.3s;
+        }
+        .tab.active { background: var(--primary); color: white; }
+        
+        .input-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: #475569; }
+        input {
+            width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0;
+            border-radius: 0.75rem; box-sizing: border-box; outline: none;
+            font-size: 1rem; transition: all 0.2s;
+        }
+        input:focus { border-color: var(--primary); background-color: #fff; }
+        
+        .results-container { margin-top: 2rem; display: grid; gap: 1rem; }
+        .result-box { padding: 1.2rem; border-radius: 1rem; text-align: center; }
+        .shares-box { background: #eff6ff; border: 1px solid #bfdbfe; }
+        .cost-box { background: #ecfdf5; border: 1px solid #a7f3d0; }
+        
+        .label-text { font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 0.3rem; }
+        .value-text { font-size: 1.4rem; font-weight: 800; }
+        .unit { font-size: 0.9rem; font-weight: normal; margin-right: 4px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center; color: var(--primary);">📈 حاسبة التعديل الذكية</h2>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="switchMode('target')">بناءً على هدف</div>
+        <div class="tab" onclick="switchMode('budget')">بناءً على مبلغ</div>
+    </div>
+
+    <div class="input-group">
+        <label>عدد الأسهم الحالية</label>
+        <input type="number" id="currentShares" value="100" oninput="calculate()">
+    </div>
+    <div class="input-group">
+        <label>متوسط سعرك</label>
+        <input type="number" id="currentAvg" value="50" oninput="calculate()">
+    </div>
+    <div class="input-group">
+        <label>متوسط سعر التعديل (السعر الآن)</label>
+        <input type="number" id="newPrice" value="30" oninput="calculate()">
+    </div>
+
+    <div id="targetModeInput" class="input-group">
+        <label style="color: var(--primary);">المتوسط المستهدف</label>
+        <input type="number" id="targetAvg" value="37" oninput="calculate()" style="border-color: var(--primary);">
+    </div>
+
+    <div id="budgetModeInput" class="input-group hidden">
+        <label style="color: var(--secondary);">المبلغ المتاح للتعديل (كاش)</label>
+        <input type="number" id="budgetAmount" value="5000" oninput="calculate()" style="border-color: var(--secondary);">
+    </div>
+
+    <div class="results-container">
+        <div class="result-box shares-box" id="box1">
+            <span class="label-text" id="label1">تحتاج لشراء</span>
+            <span class="value-text" id="val1">0</span>
+        </div>
+        
+        <div class="result-box cost-box" id="box2">
+            <span class="label-text" id="label2">تكلفة الشراء الجديد</span>
+            <span class="value-text" id="val2" style="color: var(--secondary);">0</span>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentMode = 'target';
+
+function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    document.getElementById('targetModeInput').classList.toggle('hidden', mode !== 'target');
+    document.getElementById('budgetModeInput').classList.toggle('hidden', mode !== 'budget');
+    
+    calculate();
+}
+
+function calculate() {
+    const N = parseFloat(document.getElementById('currentShares').value) || 0;
+    const A = parseFloat(document.getElementById('currentAvg').value) || 0;
+    const P = parseFloat(document.getElementById('newPrice').value) || 0;
+
+    const val1 = document.getElementById('val1');
+    const val2 = document.getElementById('val2');
+    const lbl1 = document.getElementById('label1');
+    const lbl2 = document.getElementById('label2');
+
+    if (currentMode === 'target') {
+        const T = parseFloat(document.getElementById('targetAvg').value) || 0;
+        lbl1.innerText = "تحتاج لشراء";
+        lbl2.innerText = "تكلفة الشراء الجديد";
+        
+        if (T < A && P < T && N > 0) {
+            const x = Math.ceil((N * (A - T)) / (T - P));
+            val1.innerHTML = x.toLocaleString() + ' <span class="unit">سهم</span>';
+            val2.innerHTML = (x * P).toLocaleString() + ' <span class="unit">ريال</span>';
+        } else {
+            val1.innerText = "--"; val2.innerText = "--";
+        }
+    } else {
+        const B = parseFloat(document.getElementById('budgetAmount').value) || 0;
+        lbl1.innerText = "المتوسط الجديد سيصبح";
+        lbl2.innerText = "عدد الأسهم الجديدة";
+        
+        if (B > 0 && P > 0 && N > 0) {
+            const x = Math.floor(B / P); // كم سهم يشتري لك المبلغ
+            const newAvg = ((N * A) + (x * P)) / (N + x);
+            val1.innerHTML = newAvg.toFixed(2) + ' <span class="unit">ريال</span>';
+            val2.innerHTML = x.toLocaleString() + ' <span class="unit">سهم</span>';
+        } else {
+            val1.innerText = "--"; val2.innerText = "--";
+        }
+    }
+}
+
+calculate();
+</script>
+
+</body>
+</html>
