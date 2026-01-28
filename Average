@@ -32,6 +32,7 @@
             flex: 1; padding: 10px; text-align: center; cursor: pointer;
             border-radius: 0.5rem; font-weight: bold; font-size: 0.9rem;
             transition: 0.3s;
+
         }
         .tab.active { background: var(--primary); color: white; }
         
