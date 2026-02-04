@@ -218,6 +218,138 @@
             margin-left: auto;
             margin-right: auto;
         }
+
+        /* تنسيق الجوال في الوضع الأفقي */
+        @media screen and (max-width: 1024px) and (orientation: landscape) {
+            .main-content {
+                max-width: 100%;
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+                width: 100%;
+            }
+            
+            /* جعل الأجوبة في صف واحد */
+            #answer-options-container {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                gap: 10px;
+                max-width: 100%;
+                margin: 15px auto;
+            }
+            
+            .answer-btn {
+                font-size: 1.2em;
+                padding: 12px 8px;
+                min-height: 55px;
+            }
+            
+            /* تعديل حجم السؤال */
+            #question {
+                font-size: 2.5em;
+                margin: 20px auto;
+                min-height: 130px;
+                width: 300px;
+            }
+            
+            .q-line {
+                font-size: 0.9em;
+                height: 1.1em;
+                line-height: 1.1em;
+            }
+            
+            /* تعديل قسم الأسماء ليكون عمودياً في الشاشات الصغيرة */
+            .names-input-section {
+                flex-direction: column;
+            }
+            
+            .folder {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .folder:last-child {
+                margin-bottom: 0;
+            }
+            
+            /* تعديل قسم إعداد الجولة */
+            .round-setup {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .round-setup > * {
+                width: 100%;
+            }
+            
+            .round-setup label, 
+            .round-setup select {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            /* تعديل حجم الخطوط */
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+            
+            #timer-display {
+                font-size: 1.5em;
+                min-width: 110px;
+                padding: 4px 12px;
+            }
+            
+            #turn-indicator {
+                font-size: 1.2em;
+            }
+            
+            /* تعديل قسم المتسابقين المتبقين */
+            .remaining-contestants-section {
+                padding: 10px;
+                margin-top: 20px;
+            }
+            
+            .remaining-contestants-section h2 {
+                font-size: 1.1em;
+            }
+            
+            #remaining-contestants-display {
+                font-size: 1em;
+            }
+            
+            /* تعديل الأزرار */
+            #start-btn, #next-round-btn {
+                padding: 10px 20px;
+                font-size: 1.2em;
+            }
+        }
+
+        /* للشاشات الأصغر جداً في الوضع الأفقي */
+        @media screen and (max-width: 768px) and (orientation: landscape) {
+            #answer-options-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            
+            .answer-btn {
+                font-size: 1.1em;
+                padding: 10px 6px;
+                min-height: 50px;
+            }
+            
+            #question {
+                font-size: 2.2em;
+                min-height: 110px;
+                width: 280px;
+            }
+            
+            h1 {
+                font-size: 1.6em;
+            }
+        }
     </style>
 </head>
 <body>
@@ -833,7 +965,6 @@
              const allPlaces = Object.keys(placesMapping);
              const placeValue = placeInfo ? placeInfo.value : 1;
 
-
              if (placeInfo) {
                  
                  // 1. التقريب بالاتجاه المعاكس (زيادة/إنقاص خاطئة)
@@ -925,7 +1056,6 @@
         
         return Array.from(distractors).slice(0, 3).map(d => formatNumberDisplay(d, decimalPlaces));
     }
-
 
     // ----------------------------------------------------------------
     // --- دوال الحفظ والتحميل (باقي الدوال بدون تغيير) ---
@@ -1174,7 +1304,6 @@
         }
     }
 
-
     function startNewRound() {
         if (!gameStarted) {
              alert('يرجى بدء المسابقة أولاً لتحميل الأسماء.');
@@ -1232,7 +1361,6 @@
         } else { // elimination1
              document.getElementById('feedback').innerHTML = `الآن يتنافس: ${playerName1} vs ${playerName2} من ${selectedFolderName} (${modeDisplay})`;
         }
-
 
         document.getElementById('score1-display').innerHTML = `${playerName1} (فوز): ${player1Wins.toLocaleString(ARABIC_LOCALE)}`;
         document.getElementById('score2-display').innerHTML = `${playerName2} (فوز): ${player2Wins.toLocaleString(ARABIC_LOCALE)}`;
