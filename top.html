@@ -95,9 +95,61 @@
             pointer-events: none;
         }
 
-        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        #turn-indicator { font-size: 1.5em; }
-        #timer-display { font-size: 2em; font-weight: bold; color: #333; padding: 5px 15px; border: 3px dashed #ffd43b; border-radius: 8px; min-width: 120px; }
+        .header-section { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 10px; 
+            gap: 15px;
+        }
+        #turn-indicator { 
+            font-size: 1.5em; 
+            flex: 1;
+            text-align: right;
+        }
+        
+        /* 🌟 تصميم المؤقت والعدد المتبقي في نفس السطر */
+        .timer-and-count-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+            justify-content: flex-start;
+        }
+        
+        #timer-display { 
+            font-size: 2em; 
+            font-weight: bold; 
+            color: #333; 
+            padding: 5px 15px; 
+            border: 3px dashed #ffd43b; 
+            border-radius: 8px; 
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        /* 🌟 تصميم العدد المتبقي بجانب المؤقت */
+        #remaining-count-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4dabf7;
+            padding: 5px 10px;
+            border: 2px solid #4dabf7;
+            border-radius: 6px;
+            background-color: #e7f5ff;
+            white-space: nowrap;
+            direction: rtl;
+            min-width: 60px;
+            text-align: center;
+        }
+        #remaining-count-display .count-number {
+            color: #e63946;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-right: 3px;
+        }
 
         /* تعديلات السؤال ليصبح عموديًا */
         #question { 
@@ -325,6 +377,11 @@
                 padding: 4px 12px;
             }
             
+            #remaining-count-display {
+                font-size: 1.1em;
+                padding: 4px 8px;
+            }
+            
             #turn-indicator {
                 font-size: 1.2em;
             }
@@ -371,6 +428,26 @@
             
             h1 {
                 font-size: 1.6em;
+            }
+        }
+        
+        /* للشاشات الصغيرة في الوضع العامودي */
+        @media screen and (max-width: 768px) {
+            .header-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            #turn-indicator {
+                order: 1;
+                text-align: center;
+                width: 100%;
+            }
+            
+            .timer-and-count-container {
+                order: 2;
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -464,7 +541,14 @@
             <div id="turn-indicator">
                 الدور: <span id="current-player" class="player-turn">أدخل الأسماء</span>
             </div>
-            <div id="timer-display">30 ثوانٍ</div> 
+            
+            <!-- 🌟 حاوية المؤقت والعدد المتبقي في نفس السطر -->
+            <div class="timer-and-count-container">
+                <div id="timer-display">30 ثوانٍ</div> 
+                <div id="remaining-count-display">
+                    <span class="count-number">0</span> متبقون
+                </div>
+            </div>
         </div>
 
         <div id="question">
@@ -661,6 +745,21 @@
         } else {
             const listItems = folderStudentsInPlay.map(name => `<span>${name}</span>`).join(' • ');
             displayElement.innerHTML = `**المتبقون (${folderStudentsInPlay.length.toLocaleString(ARABIC_LOCALE)}):** ${listItems}`;
+        }
+        
+        // 🌟 تحديث العدد المتبقي بجانب المؤقت
+        updateRemainingCountDisplay();
+    }
+    
+    // 🌟 دالة جديدة لتحديث العدد المتبقي بجانب المؤقت
+    function updateRemainingCountDisplay() {
+        const countElement = document.getElementById('remaining-count-display');
+        const countNumberElement = countElement.querySelector('.count-number');
+        
+        if (folderStudentsInPlay.length === 0) {
+            countNumberElement.textContent = '0';
+        } else {
+            countNumberElement.textContent = folderStudentsInPlay.length.toLocaleString(ARABIC_LOCALE);
         }
     }
     
@@ -1715,6 +1814,9 @@
     window.onload = () => {
         loadContestantsAndScores();
         toggleOpLevelControls(); 
+        
+        // 🌟 تحديث العدد المتبقي عند التحميل
+        updateRemainingCountDisplay();
     };
     
 </script>
