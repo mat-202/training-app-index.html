@@ -29,9 +29,19 @@
         .btn-action:hover { transform: translateY(-2px); opacity: 0.9; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
         .modal-content { background: white; width: 90%; max-width: 500px; margin: 50px auto; border-radius: 20px; padding: 20px; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .history-item { 
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-right: 4px solid;
+            transition: transform 0.2s;
+        }
+        .history-item:hover { transform: translateX(-5px); }
         .control-panel { background: #f8f9fa; padding: 15px; border-radius: 15px; margin-top: 20px; border: 2px dashed #ccc; }
         textarea { width: 100%; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+        .time-badge { background: #2c3e50; color: white; padding: 3px 8px; border-radius: 15px; font-size: 0.8rem; display: inline-block; margin-left: 5px; }
+        .date-badge { background: #3498db; color: white; padding: 3px 8px; border-radius: 15px; font-size: 0.8rem; display: inline-block; }
     </style>
 </head>
 <body>
@@ -103,9 +113,26 @@
     function addAction(name, key) {
         const act = ACTIONS[key];
         const student = db[currentClass][name];
-        student.history.push({ id: Date.now(), name: act.name, val: act.val, color: act.color, time: new Date().toLocaleTimeString('ar-SA') });
+        const now = new Date();
+        
+        student.history.push({
+            id: Date.now(),
+            name: act.name,
+            val: act.val,
+            color: act.color,
+            time: now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+            date: now.toLocaleDateString('ar-SA', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }),
+            timestamp: now.toISOString()
+        });
+        
         student.score += act.val;
-        save(); render();
+        save(); 
+        render();
     }
 
     function deleteAction(studentName, id) {
@@ -114,7 +141,9 @@
         if (idx > -1) {
             s.score -= s.history[idx].val;
             s.history.splice(idx, 1);
-            save(); render(); openReport(studentName);
+            save(); 
+            render(); 
+            openReport(studentName);
         }
     }
 
@@ -160,20 +189,87 @@
 
     function importNames() {
         const val = document.getElementById(`in-${currentClass}`).value;
-        val.split('\n').forEach(n => { if(n.trim() && !db[currentClass][n.trim()]) db[currentClass][n.trim()] = { score: 0, history: [] }; });
-        save(); render();
+        val.split('\n').forEach(n => { 
+            if(n.trim() && !db[currentClass][n.trim()]) {
+                db[currentClass][n.trim()] = { score: 0, history: [] }; 
+            }
+        });
+        save(); 
+        render();
     }
 
     function openReport(name) {
         const s = db[currentClass][name];
-        document.getElementById('reportName').textContent = name;
-        let h = s.history.slice().reverse().map(a => `<div class="history-item"><span>${a.name} (${a.val})</span><button onclick="deleteAction('${name}',${a.id})" style="background:red; color:white; border:none; border-radius:4px; cursor:pointer;">تراجع</button></div>`).join('');
-        document.getElementById('reportDetails').innerHTML = h || 'لا توجد بيانات';
+        document.getElementById('reportName').textContent = `سجل ${name}`;
+        
+        let h = '';
+        if (s.history.length === 0) {
+            h = '<div style="text-align:center; padding:20px; color:#777;">لا توجد ملاحظات مسجلة بعد</div>';
+        } else {
+            // عرض السجل من الأحدث إلى الأقدم
+            h = s.history.slice().reverse().map(a => `
+                <div class="history-item" style="border-right-color:${a.color};">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <strong style="color:${a.color}">${a.name}</strong>
+                        <span style="font-weight:bold; color:${a.val > 0 ? '#27ae60' : a.val < 0 ? '#e74c3c' : '#f39c12'}">
+                            ${a.val > 0 ? '+' : ''}${a.val}
+                        </span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#666;">
+                        <span>📅 ${a.date}</span>
+                        <span>🕒 ${a.time}</span>
+                    </div>
+                    <div style="text-align:left; margin-top:5px;">
+                        <button onclick="deleteAction('${name}',${a.id})" 
+                                style="background:#e74c3c; color:white; border:none; border-radius:5px; padding:4px 8px; cursor:pointer; font-size:0.8rem;">
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // إضافة زر تصدير السجل
+        h += `
+        <div style="margin-top:20px; text-align:center;">
+            <button onclick="exportHistory('${name}')" 
+                    style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">
+                📥 تصدير السجل
+            </button>
+        </div>`;
+        
+        document.getElementById('reportDetails').innerHTML = h;
         document.getElementById('reportModal').style.display = 'block';
     }
 
-    function closeModal() { document.getElementById('reportModal').style.display = 'none'; }
-    function resetSystem() { if(confirm("حذف كل شيء؟")) { localStorage.clear(); location.reload(); } }
+    function exportHistory(name) {
+        const student = db[currentClass][name];
+        let csv = 'التاريخ,الوقت,الإجراء,القيمة\n';
+        
+        student.history.forEach(action => {
+            csv += `${action.date},${action.time},${action.name},${action.val}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `سجل_${name}_${new Date().toLocaleDateString('ar-SA')}.csv`);
+        link.click();
+    }
+
+    function closeModal() { 
+        document.getElementById('reportModal').style.display = 'none'; 
+    }
+    
+    function resetSystem() { 
+        if(confirm("هل تريد حذف كل البيانات؟")) { 
+            localStorage.clear(); 
+            location.reload(); 
+        } 
+    }
+    
+    // عند تحميل الصفحة، نعرض البيانات
     window.onload = render;
 </script>
 </body>
